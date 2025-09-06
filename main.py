@@ -3,10 +3,12 @@ from sqlalchemy.orm import Session
 import models, schemas, crud
 from database import SessionLocal, engine, Base
 
+# Crea las tablas en la base de datos (si no existen)
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# Dependencia para obtener la sesión de base de datos
 def get_db():
     db = SessionLocal()
     try:
@@ -47,3 +49,4 @@ def delete_persona(persona_id: int, db: Session = Depends(get_db)):
     if db_persona is None:
         raise HTTPException(status_code=404, detail="Persona no encontrada")
     return db_persona
+
