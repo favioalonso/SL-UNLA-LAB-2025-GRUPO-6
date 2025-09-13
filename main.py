@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import models, schemas, crud, schemasTurno, crudTurno
 from database import SessionLocal, engine, Base
@@ -50,3 +50,9 @@ def delete_persona(persona_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Persona no encontrada")
     return db_persona
 
+@app.post("/turnos",response_model= schemasTurno.TurnoOut, status_code=status.HTTP_201_CREATED)
+def crear_turno(turno: schemasTurno.TurnoCreate, db: Session = Depends(get_db)):
+    nuevo_turno, error = crudTurno.create_turnos(db, turno)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    return nuevo_turno

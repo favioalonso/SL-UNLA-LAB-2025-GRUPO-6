@@ -1,22 +1,22 @@
 from pydantic import BaseModel
 from datetime import date, time
-from typing import Optional
+from schemas import PersonaOut
 
 class TurnoBase(BaseModel):
     fecha: date
     hora: time
-    estado:Optional [str] = "Pendiente"
     persona_id: int
 
 class TurnoCreate(TurnoBase):
     pass
 
 class TurnoOut(TurnoBase):
+    estado: str
     id: int
-
+    persona: PersonaOut
+    
     class Config:
         orm_mode = True
-
 
 
 
