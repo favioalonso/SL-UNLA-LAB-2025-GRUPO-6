@@ -1,57 +1,28 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 import models, schemasTurno
-from datetime import date, time, timedelta
+from datetime import date, time, timedelta, datetime
+from crud import calcular_edad
 
+#Funciones para validad los atributos del cuerpo de entrada de datos
+def validar_fechaYhora(turno: schemasTurno.TurnoCreate):
 
-def calcular_edad(fecha_nacimiento):
-    from datetime import date
-    hoy = date.today()
-    return hoy.year - fecha_nacimiento.year - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
-
-def validar_hora(hora: time):
-    if hora.hour < 9 or hora.hour >= 17:
-        return False
-    if hora.minute == 30 or hora.minute == 0:
-        return True
-    else:
-        return False
+    if turno.hora.hour < 9 or turno.hora.hour >= 17:
+        return "La hora debe ser entre las 9:00 y 16:30"
     
-
-    
-def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
-
-    persona = db.query(models.Persona).filter(models.Persona.id == turno.persona_id).first()
-
-    if not persona: 
-        return None, "Persona no encontrada"
+    if not (turno.hora.minute == 30 or turno.hora.minute == 0):
+        return "La hora debe tener el siguiente formato: HH:00/HH:30"
     
     if turno.fecha < date.today():
-        return None, "La fecha no puede ser menor a la de hoy"
+        return "La fecha no puede ser menor a la de hoy"
     
-    if not validar_hora(turno.hora):
-        return None, "La hora debe ser entre las 9:00 y 16:30 cada 30 minutos"
-     
-    existente = db.query(models.Turno).filter(models.Turno.fecha == turno.fecha, func.strftime('%H:%M', models.Turno.hora) == turno.hora.strftime('%H:%M')).first()
-
-    if existente: 
-        return None, "El turno ya esta reservado"
+    if turno.fecha.weekday() == 6: 
+       return "No se pueden reservar turnos los domingos"
     
-    seisMesesAtras = date.today() - timedelta(days=180)
-    cantCancelados = db.query(models.Turno).filter(models.Turno.persona_id == turno.persona_id, 
-                                                   models.Turno.estado == "cancelado", 
-                                                   models.Turno.fecha >= seisMesesAtras).count()
-    if (cantCancelados >= 5):
-        persona = db.query(models.Persona).filter(models.Persona.id == turno.persona_id).first()
-        persona.habilitado = False
-        return None, "La persona no esta habilitada a sacar un turno"
+    return None
 
-    nuevo_turno = models.Turno(**turno.dict())
-    
-    db.add(nuevo_turno)
-    db.commit()
-    db.refresh(nuevo_turno)
-
+#Crea un turno diccionario para que respondan los endpoints y adapte facilmente con el esquema de TurnoOut
+def turno_diccionario(nuevo_turno: models.Turno, persona: models.Persona):
     persona_dict={
         "nombre": persona.nombre,
         "email": persona.email,
@@ -70,8 +41,61 @@ def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
         "estado": nuevo_turno.estado,
         "persona": persona_dict
    }
+    return turno_dict
+
+#Regla de negocio, habilita a las personas si ya paso el tiempo de deshabilitacion y deshabilita segun regla de turnos cancelados
+def habilitar_persona(db: Session, turno: schemasTurno.TurnoCreate, persona: models.Persona):
+
+    seisMesesAtras = date.today() - timedelta(days=180)
+    cantCancelados = db.query(models.Turno).filter(models.Turno.persona_id == turno.persona_id, 
+                                                   models.Turno.estado == "cancelado", 
+                                                   models.Turno.fecha >= seisMesesAtras).count()
+    if (cantCancelados >= 5):
+        persona.habilitado = False
+        db.commit()
+        db.refresh(persona)
+        return False
+    else:
+        if (persona.habilitado == False):
+            persona.habilitado = True
+            db.commit()
+            db.refresh(persona)
+    return True
     
-    return turno_dict, None
+#Funcion para el endpoint POST/turnos
+def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
 
+    persona = db.query(models.Persona).filter(models.Persona.id == turno.persona_id).first()
 
+    if not persona: 
+        raise ValueError("Persona no encontrada")
+    
+    if(not habilitar_persona(db, turno, persona)):
+        raise PermissionError ("La persona no esta habilitada")
+    
+    error = validar_fechaYhora(turno)
+    if error:
+        raise ValueError(error)
+        
+    existente = db.query(models.Turno).filter(models.Turno.fecha == turno.fecha, func.strftime('%H:%M', models.Turno.hora) == turno.hora.strftime('%H:%M')).first()
 
+    if existente: 
+        raise ValueError("El turno ya esta reservado")
+
+    nuevo_turno = models.Turno(**turno.dict())
+    
+    db.add(nuevo_turno)
+    db.commit()
+    db.refresh(nuevo_turno)
+
+    return turno_diccionario(nuevo_turno, persona)
+
+#Funcion para el endpoint GET/turnos
+def get_turnos(db: Session, skip: int, limit: int):
+    turnos = db.query(models.Turno).offset(skip).limit(limit).all()
+    if not turnos:
+        raise ValueError("No hay turnos registrados")
+    turnos_lista = []
+    for turno in turnos:
+        turnos_lista.append(turno_diccionario(turno, turno.persona))
+    return turnos_lista

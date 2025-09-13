@@ -52,7 +52,42 @@ def delete_persona(persona_id: int, db: Session = Depends(get_db)):
 
 @app.post("/turnos",response_model= schemasTurno.TurnoOut, status_code=status.HTTP_201_CREATED)
 def crear_turno(turno: schemasTurno.TurnoCreate, db: Session = Depends(get_db)):
-    nuevo_turno, error = crudTurno.create_turnos(db, turno)
-    if error:
-        raise HTTPException(status_code=400, detail=error)
-    return nuevo_turno
+    try:
+        return crudTurno.create_turnos(db,turno)
+    
+    except ValueError as e:
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    except PermissionError as e:
+
+        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail=str(e))
+    
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error inesperado: {str(e)}"
+        )
+
+@app.get("/turnos", response_model=list[schemasTurno.TurnoOut])
+def get_turnos(db: Session = Depends(get_db), skip:int = 0, limit:int = 100):
+    try:
+        return crudTurno.get_turnos(db, skip, limit)
+    
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error inesperado: {str(e)}"
+        )
+
+
+

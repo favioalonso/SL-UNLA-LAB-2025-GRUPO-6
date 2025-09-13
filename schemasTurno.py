@@ -10,9 +10,11 @@ class TurnoBase(BaseModel):
 class TurnoCreate(TurnoBase):
     pass
 
-class TurnoOut(TurnoBase):
-    estado: str
+class TurnoOut(BaseModel):
     id: int
+    fecha: date
+    hora: time
+    estado: str
     persona: PersonaOut
     
     class Config:
