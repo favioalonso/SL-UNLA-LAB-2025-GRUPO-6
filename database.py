@@ -15,4 +15,3 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Crea una clase base para los modelos
 Base = declarative_base()
-

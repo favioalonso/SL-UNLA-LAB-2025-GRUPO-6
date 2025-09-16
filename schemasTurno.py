@@ -20,7 +20,13 @@ class TurnoOut(BaseModel):
     class Config:
         orm_mode = True
 
+class Horarios(BaseModel):
+    fecha: date
+    horarios_disponibles: list[str]
 
+class HorariosResponse(BaseModel):
+    fecha: date
+    horarios_disponibles: list[str]
 
 
     

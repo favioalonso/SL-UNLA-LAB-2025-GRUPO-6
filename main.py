@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import models, schemas, crud, schemasTurno, crudTurno
-from database import SessionLocal, engine, Base
+from database import SessionLocal, engine, Base #Usamos Base??
+from datetime import date
 
 # Crea las tablas en la base de datos (si no existen)
 models.Base.metadata.create_all(bind=engine)
@@ -88,6 +89,19 @@ def get_turnos(db: Session = Depends(get_db), skip:int = 0, limit:int = 100):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error inesperado: {str(e)}"
         )
+@app.delete("/turnos/{turno_id}")
+def delete_turno(turno_id: int, db: Session = Depends(get_db)):
+    db_turno = crudTurno.delete_turno(turno_id, db)
+    if not db_turno:
+        raise HTTPException(status_code=404, detail="Turno no encontrado")
+    return
 
-
-
+@app.get("/turnos/turnos-disponibles", response_model=schemasTurno.HorariosResponse)
+def get_turnos_disponibles(fecha:date, db: Session = Depends(get_db)):
+    try:
+        lista_disponibles = crudTurno.get_turnos_disponibles(fecha, db)
+        if not lista_disponibles:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No hay horarios disponibles para la fecha {fecha}")
+        return schemasTurno.HorariosResponse(fecha=fecha,horarios_disponibles=lista_disponibles)
+    except Exception as e:
+       raise HTTPException(status_shcode=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=f"Error al obtener los turnos disponbiles: {e}")

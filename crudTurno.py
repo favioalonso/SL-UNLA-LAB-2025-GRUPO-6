@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-import models, schemasTurno
+from sqlalchemy import func, or_
+import models, schemasTurno 
 from datetime import date, time, timedelta, datetime
 from crud import calcular_edad
 
@@ -99,3 +99,36 @@ def get_turnos(db: Session, skip: int, limit: int):
     for turno in turnos:
         turnos_lista.append(turno_diccionario(turno, turno.persona))
     return turnos_lista
+
+#Funcion para eliminar turno por id
+def delete_turno(turno_id: int, db: Session):
+    turno_eliminar = db.query(models.Turno).filter(models.Turno.id == turno_id).first()
+    if turno_eliminar:
+        db.delete(turno_eliminar)
+        db.commit()
+        return True #exito
+    return False
+#Funcion para sumar 30 minutos a una hora:time
+def siguiente_hora(hora_actual:time):
+
+    #Para usar timedelta es necesario trabajar con un dato datetime
+    fecha = datetime.today()
+    objeto_hora = datetime.combine(fecha, hora_actual)
+
+    #Extrae unicamente el dato time
+    nueva_hora_datetime = objeto_hora + timedelta(minutes=30)
+    return nueva_hora_datetime.time()
+
+#Funcion para mostrar turnos disponibles por fecha ingresada
+def get_turnos_disponibles(fecha: date, db: Session):
+    turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(models.Turno.fecha == fecha).all()]
+    print(turnos_reservados)
+    hora_inicio = time(hour=9, minute=0)
+    hora_fin =  time(hour=17,minute=30)
+    posibles_turnos = [] #comienza vacio
+    hora = hora_inicio
+    while hora <= hora_fin:
+        if hora not in turnos_reservados: 
+            posibles_turnos.append(hora.strftime("%H:%M"))
+        hora = siguiente_hora(hora)
+    return posibles_turnos
