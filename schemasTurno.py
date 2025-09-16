@@ -20,6 +20,7 @@ class TurnoOut(BaseModel):
     class Config:
         orm_mode = True
 
+#Modelo de respuesta para JSON de horarios segun una unica fecha
 class Horarios(BaseModel):
     fecha: date
     horarios_disponibles: list[str]

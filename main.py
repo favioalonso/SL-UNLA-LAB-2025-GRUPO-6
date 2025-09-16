@@ -89,6 +89,7 @@ def get_turnos(db: Session = Depends(get_db), skip:int = 0, limit:int = 100):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error inesperado: {str(e)}"
         )
+    
 @app.delete("/turnos/{turno_id}")
 def delete_turno(turno_id: int, db: Session = Depends(get_db)):
     db_turno = crudTurno.delete_turno(turno_id, db)

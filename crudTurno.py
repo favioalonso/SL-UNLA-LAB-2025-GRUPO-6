@@ -108,6 +108,7 @@ def delete_turno(turno_id: int, db: Session):
         db.commit()
         return True #exito
     return False
+
 #Funcion para sumar 30 minutos a una hora:time
 def siguiente_hora(hora_actual:time):
 
@@ -122,13 +123,17 @@ def siguiente_hora(hora_actual:time):
 #Funcion para mostrar turnos disponibles por fecha ingresada
 def get_turnos_disponibles(fecha: date, db: Session):
     turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(models.Turno.fecha == fecha).all()]
-    print(turnos_reservados)
+
+    #Define el rango horario
     hora_inicio = time(hour=9, minute=0)
     hora_fin =  time(hour=17,minute=30)
-    posibles_turnos = [] #comienza vacio
+    posibles_turnos = [] #lista de horarios disponibles
+    
+    #Bucle para buscar turnos disponibles
     hora = hora_inicio
     while hora <= hora_fin:
         if hora not in turnos_reservados: 
-            posibles_turnos.append(hora.strftime("%H:%M"))
+            posibles_turnos.append(hora.strftime("%H:%M")) #Ajusta el formato de fecha
         hora = siguiente_hora(hora)
+
     return posibles_turnos
