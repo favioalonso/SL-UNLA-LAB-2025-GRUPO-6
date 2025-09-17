@@ -29,6 +29,10 @@ class HorariosResponse(BaseModel):
     fecha: date
     horarios_disponibles: list[str]
 
+#Retorna un mensaje
+class MensajeResponse(BaseModel):
+    mensaje: str
+
 
     
 

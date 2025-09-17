@@ -90,12 +90,12 @@ def get_turnos(db: Session = Depends(get_db), skip:int = 0, limit:int = 100):
             detail=f"Error inesperado: {str(e)}"
         )
     
-@app.delete("/turnos/{turno_id}")
+@app.delete("/turnos/{turno_id}", response_model=schemasTurno.MensajeResponse)
 def delete_turno(turno_id: int, db: Session = Depends(get_db)):
     db_turno = crudTurno.delete_turno(turno_id, db)
     if not db_turno:
         raise HTTPException(status_code=404, detail="Turno no encontrado")
-    return
+    return {"mensaje": "El turno ha sido eliminado exitosamente"}
 
 @app.get("/turnos/turnos-disponibles", response_model=schemasTurno.HorariosResponse)
 def get_turnos_disponibles(fecha:date, db: Session = Depends(get_db)):
