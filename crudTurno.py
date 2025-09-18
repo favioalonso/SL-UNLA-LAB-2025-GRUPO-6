@@ -125,7 +125,7 @@ def siguiente_hora(hora_actual:time):
 
 #Funcion para mostrar turnos disponibles por fecha ingresada
 def get_turnos_disponibles(fecha: date, db: Session):
-    turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(and_(models.Turno.fecha == fecha, or_(models.Turno.estado == "Pendiente", models.Turno.estado == "Cancelado"))).all()]
+    turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(and_(models.Turno.fecha == fecha, or_(models.Turno.estado == "Pendiente", models.Turno.estado == "Confirmado"))).all()]
 
     #Define el rango horario
     hora_inicio = time(hour=9, minute=0)
