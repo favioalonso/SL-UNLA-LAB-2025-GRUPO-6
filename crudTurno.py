@@ -99,3 +99,58 @@ def get_turnos(db: Session, skip: int, limit: int):
     for turno in turnos:
         turnos_lista.append(turno_diccionario(turno, turno.persona))
     return turnos_lista
+
+#Funcion para tener el turno por ID
+def get_turno(db: Session, turno_id: int):
+    turno = db.query(models.Turno).filter(models.Turno.id == turno_id).first()
+    if not turno:
+        return None 
+    return turno_diccionario(turno,turno.persona) #Retorno el diccionario con la persona incluida
+
+#Funcion para actualizar su turno por ID
+def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpdate):
+   turno_db = db.query(models.Turno). filter(models.Turno.id == turno_id).first()
+
+   if not turno_db:
+       return None
+   #Si ingresa valores nuevos los cambia, pero si no lo hace quedan los mismos
+   nueva_fecha = turno_update.fecha if turno_update.fecha is not None else turno_db.fecha
+   nueva_hora = turno_update.hora if turno_update.hora is not None else turno_db.hora
+   nuevo_estado = turno_update.estado if turno_update.estado is not None else turno_db.estado
+
+
+    #creamos turno_provisional para que contenga los datos nuevos y llamamos a validar_fechaYhora para ver si cumple con las condiciones
+   turno_provisional = schemasTurno.TurnoCreate(fecha= nueva_fecha, hora= nueva_hora, persona_id=turno_db.persona_id)
+   error = validar_fechaYhora(turno_provisional)
+   if error:
+       raise ValueError(error)
+   
+    #existente compara si hay dos fechas iguales pero con distinto id, quiere decir que hay dos turnos que se estan por superponer
+   existente = db.query(models.Turno).filter(
+       models.Turno.fecha == nueva_fecha,
+       func.strftime('%H:%M', models.Turno.hora) == nueva_hora.strftime('%H:%M'), #pasa el dato a str con horas y minutos para poder compararlo
+       models.Turno.id != turno_db.id
+   ).first()
+    #si es existente, error
+   if existente:
+       raise ValueError("Ya existe un turno reservado en esa fecha y hora")
+   
+   
+   if turno_update.estado is not None:
+       estados_permitidos = {"pendiente", "cancelado", "confirmado", "asistido"}
+       if turno_update.estado.lower() not in estados_permitidos: #verifica el estado que se cambia teniendo en cuenta minusculas   
+           raise ValueError(f"Estado inválido. Los estados permitidos son: {', '.join(estados_permitidos)}") #Si no es ninguno de los mencionados tira un mensaje
+   
+   try:
+       #Asignacion de los nuevos valores
+       turno_db.fecha = nueva_fecha
+       turno_db.hora = nueva_hora
+       turno_db.estado =nuevo_estado
+
+       db.commit()
+       db.refresh(turno_db)
+
+       return turno_diccionario(turno_db,turno_db.persona)
+   except Exception as e:
+       db.rollback() #creamos un rollback por si hay un error que no modifique los datos que ya estaban
+       raise e
