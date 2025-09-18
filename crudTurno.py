@@ -102,6 +102,9 @@ def get_turnos(db: Session, skip: int, limit: int):
 
 #Funcion para eliminar turno por id
 def delete_turno(turno_id: int, db: Session):
+    
+    #Ver de agregar un rollback para la transaccion!!!!
+    
     turno_eliminar = db.query(models.Turno).filter(models.Turno.id == turno_id).first()
     if turno_eliminar:
         db.delete(turno_eliminar)
