@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-import models, schemasTurno
+import models.models as mosdels, schemas.schemasTurno as schemasTurno
 from datetime import date, time, timedelta, datetime
-from crud import calcular_edad
+from crud.crudTurno as crudTurno import calcular_edad
 
 
 #Funciones para validad los atributos del cuerpo de entrada de datos
@@ -157,4 +157,5 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
    except Exception as e:
        db.rollback() #creamos un rollback por si hay un error que no modifique los datos que ya estaban
        raise e
+
 
