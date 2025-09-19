@@ -4,6 +4,7 @@ import models, schemasTurno
 from datetime import date, time, timedelta, datetime
 from crud import calcular_edad
 
+
 #Funciones para validad los atributos del cuerpo de entrada de datos
 def validar_fechaYhora(turno: schemasTurno.TurnoCreate):
 
@@ -48,7 +49,7 @@ def habilitar_persona(db: Session, turno: schemasTurno.TurnoCreate, persona: mod
 
     seisMesesAtras = date.today() - timedelta(days=180)
     cantCancelados = db.query(models.Turno).filter(models.Turno.persona_id == turno.persona_id, 
-                                                   models.Turno.estado == "cancelado", 
+                                                   models.Turno.estado == "Cancelado", 
                                                    models.Turno.fecha >= seisMesesAtras).count()
     if (cantCancelados >= 5):
         persona.habilitado = False
@@ -61,14 +62,18 @@ def habilitar_persona(db: Session, turno: schemasTurno.TurnoCreate, persona: mod
             db.commit()
             db.refresh(persona)
     return True
+
+##Error para indicar que no se encontro la persona en la base de datos
+class DatabaseResourceNotFound(Exception):
+    pass
     
 #Funcion para el endpoint POST/turnos
 def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
-
+    
     persona = db.query(models.Persona).filter(models.Persona.id == turno.persona_id).first()
 
     if not persona: 
-        raise ValueError("Persona no encontrada")
+        raise DatabaseResourceNotFound("Persona no encontrada")
     
     if(not habilitar_persona(db, turno, persona)):
         raise PermissionError ("La persona no esta habilitada")
@@ -83,7 +88,7 @@ def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
         raise ValueError("El turno ya esta reservado")
 
     nuevo_turno = models.Turno(**turno.dict())
-    
+
     db.add(nuevo_turno)
     db.commit()
     db.refresh(nuevo_turno)
@@ -93,8 +98,6 @@ def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
 #Funcion para el endpoint GET/turnos
 def get_turnos(db: Session, skip: int, limit: int):
     turnos = db.query(models.Turno).offset(skip).limit(limit).all()
-    if not turnos:
-        raise ValueError("No hay turnos registrados")
     turnos_lista = []
     for turno in turnos:
         turnos_lista.append(turno_diccionario(turno, turno.persona))
