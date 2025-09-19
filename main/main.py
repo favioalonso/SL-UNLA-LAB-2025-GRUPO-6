@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from typing import Optional
 import models.models as models, schemas.schemas as schemas, schemas.schemasTurno as schemasTurno, crud.crud as crud, crud.crudTurno as crudTurno
