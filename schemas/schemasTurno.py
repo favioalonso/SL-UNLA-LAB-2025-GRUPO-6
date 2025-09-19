@@ -1,7 +1,7 @@
 from time import strftime
 from pydantic import BaseModel
 from datetime import date, time
-from schemas import PersonaOut
+from schemas.schemas as schemas import PersonaOut
 from typing import Optional
 
 class TurnoBase(BaseModel):
@@ -25,4 +25,18 @@ class TurnoOut(BaseModel):
     
     class Config:
         orm_mode = True
+        
+#Modelo de respuesta para JSON de horarios segun una unica fecha
+class Horarios(BaseModel):
+    fecha: date
+    horarios_disponibles: list[str]
+
+class HorariosResponse(BaseModel):
+    fecha: date
+    horarios_disponibles: list[str]
+
+#Retorna un mensaje
+class MensajeResponse(BaseModel):
+    mensaje: str
+
 
