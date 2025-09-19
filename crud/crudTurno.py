@@ -97,11 +97,15 @@ def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
 
 #Funcion para el endpoint GET/turnos
 def get_turnos(db: Session, skip: int, limit: int):
-    turnos = db.query(models.Turno).offset(skip).limit(limit).all()
-    turnos_lista = []
-    for turno in turnos:
-        turnos_lista.append(turno_diccionario(turno, turno.persona))
-    return turnos_lista
+    try:
+        from sqlalchemy.orm import joinedload
+        turnos = db.query(models.Turno).options(joinedload(models.Turno.persona)).offset(skip).limit(limit).all()
+        turnos_lista = []
+        for turno in turnos:
+            turnos_lista.append(turno_diccionario(turno, turno.persona))
+        return turnos_lista
+    except Exception as e:
+        raise Exception(f"Error al consultar turnos: {e}")
 #Funcion para eliminar turno por id
 def delete_turno(turno_id: int, db: Session):
     
@@ -144,14 +148,19 @@ def get_turnos_disponibles(fecha: date, db: Session):
     return posibles_turnos
 #Funcion para tener el turno por ID
 def get_turno(db: Session, turno_id: int):
-    turno = db.query(models.Turno).filter(models.Turno.id == turno_id).first()
-    if not turno:
-        return None 
-    return turno_diccionario(turno,turno.persona) #Retorno el diccionario con la persona incluida
+    try:
+        from sqlalchemy.orm import joinedload
+        turno = db.query(models.Turno).options(joinedload(models.Turno.persona)).filter(models.Turno.id == turno_id).first()
+        if not turno:
+            return None
+        return turno_diccionario(turno,turno.persona) #Retorno el diccionario con la persona incluida
+    except Exception as e:
+        raise Exception(f"Error al consultar turno: {e}")
 
 #Funcion para actualizar su turno por ID
 def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpdate):
-   turno_db = db.query(models.Turno). filter(models.Turno.id == turno_id).first()
+   from sqlalchemy.orm import joinedload
+   turno_db = db.query(models.Turno).options(joinedload(models.Turno.persona)).filter(models.Turno.id == turno_id).first()
 
    if not turno_db:
        return None

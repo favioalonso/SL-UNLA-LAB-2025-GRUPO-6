@@ -1,11 +1,18 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from typing import Optional
-import models.models as models, schemas.schemas as schemas, schemas.schemasTurno as schemasTurno, crud.crud as crud, crud.crudTurno as crudTurno
-from database.database import SessionLocal, engine, Base
+from datetime import date
+
+# Imports
+import models.models as models
+import schemas.schemas as schemas
+import schemas.schemasTurno as schemasTurno
+import crud.crud as crud
+import crud.crudTurno as crudTurno
+from database.database import SessionLocal, engine
 from crud.crudTurno import DatabaseResourceNotFound
-from datetime import date as date
-# Crea las tablas en la base de datos (si no existen)
+
+# Crear tablas
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -78,7 +85,7 @@ def get_db():
     finally:
         db.close()
 
-
+# ============ ENDPOINTS DE PERSONAS ============
 @app.post("/personas", response_model=schemas.PersonaOut)
 def create_persona(persona: schemas.PersonaCreate, db: Session = Depends(get_db)):
     try:
@@ -92,7 +99,6 @@ def create_persona(persona: schemas.PersonaCreate, db: Session = Depends(get_db)
         else:
             raise HTTPException(status_code=500, detail=f"Error interno del servidor: {error_message}")
 
-
 @app.get("/personas", response_model=list[schemas.PersonaOut])
 def read_personas(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     try:
@@ -103,7 +109,6 @@ def read_personas(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
-
 
 @app.get("/personas/search", response_model=schemas.PaginatedPersonaResponse)
 def search_personas(
@@ -139,7 +144,6 @@ def search_personas(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
-
 @app.get("/personas/{persona_id}", response_model=schemas.PersonaOut)
 def read_persona(persona_id: int, db: Session = Depends(get_db)):
     try:
@@ -153,7 +157,6 @@ def read_persona(persona_id: int, db: Session = Depends(get_db)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
-
 
 @app.put("/personas/{persona_id}", response_model=schemas.PersonaOut)
 def update_persona(persona_id: int, persona: schemas.PersonaUpdate, db: Session = Depends(get_db)):
@@ -175,7 +178,6 @@ def update_persona(persona_id: int, persona: schemas.PersonaUpdate, db: Session 
         else:
             raise HTTPException(status_code=500, detail=f"Error interno del servidor: {error_message}")
 
-
 @app.delete("/personas/{persona_id}", response_model=schemas.PersonaOut)
 def delete_persona(persona_id: int, db: Session = Depends(get_db)):
     try:
@@ -190,39 +192,32 @@ def delete_persona(persona_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
-
-@app.post("/turnos",response_model= schemasTurno.TurnoOut, status_code=status.HTTP_201_CREATED)
-def crear_turno(turno: schemasTurno.TurnoCreate, db: Session = Depends(get_db)):
+# ============ ENDPOINTS DE TURNOS ============
+@app.get("/turnos", response_model=list[schemasTurno.TurnoOut])
+def get_turnos(db: Session = Depends(get_db), skip: int = 0, limit: int = 100):
     try:
-        return crudTurno.create_turnos(db,turno)
-    
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    
-    except PermissionError as e:
-        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail=str(e))
-    
-    except DatabaseResourceNotFound as e:
-        raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail=str(e))
-    
+        turnos_db = crudTurno.get_turnos(db, skip, limit)
+        return turnos_db
     except HTTPException:
         raise
-    
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error inesperado: {str(e)}"
         )
 
-@app.get("/turnos", response_model=list[schemasTurno.TurnoOut])
-def get_turnos(db: Session = Depends(get_db), skip:int = 0, limit:int = 100):
+@app.post("/turnos", response_model=schemasTurno.TurnoOut, status_code=status.HTTP_201_CREATED)
+def crear_turno(turno: schemasTurno.TurnoCreate, db: Session = Depends(get_db)):
     try:
-        turnos_db = crudTurno.get_turnos(db, skip, limit)
-        return turnos_db
-    
+        return crudTurno.create_turnos(db, turno)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except DatabaseResourceNotFound as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except HTTPException:
         raise
-
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -237,30 +232,26 @@ def delete_turno(turno_id: int, db: Session = Depends(get_db)):
     return {"mensaje": "El turno ha sido eliminado exitosamente"}
 
 @app.get("/turnos/turnos-disponibles", response_model=schemasTurno.HorariosResponse)
-def get_turnos_disponibles(fecha:date, db: Session = Depends(get_db)):
+def get_turnos_disponibles(fecha: date, db: Session = Depends(get_db)):
     try:
         lista_disponibles = crudTurno.get_turnos_disponibles(fecha, db)
         if not lista_disponibles:
             raise HTTPException(status_code=404, detail=f"No hay horarios disponibles para la fecha {fecha}")
-        return schemasTurno.HorariosResponse(fecha=fecha,horarios_disponibles=lista_disponibles)
+        return schemasTurno.HorariosResponse(fecha=fecha, horarios_disponibles=lista_disponibles)
     except Exception as e:
-       raise HTTPException(status_code=500,detail=f"Error al obtener los turnos disponbiles: {e}")
-        
+        raise HTTPException(status_code=500, detail=f"Error al obtener los turnos disponibles: {e}")
+
 @app.get("/turnos/{turno_id}", response_model=schemasTurno.TurnoOut)
 def get_turno_id(turno_id: int, db: Session = Depends(get_db)):
     try:
         turno = crudTurno.get_turno(db, turno_id)
-
         if turno is None:
             raise ValueError("Turno no encontrado")
         return turno
-    
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) #Turno no encontrado
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except TypeError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Dato invalido: {str(e)}") #No es del tipo int el id
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Dato invalido: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
 
@@ -268,24 +259,16 @@ def get_turno_id(turno_id: int, db: Session = Depends(get_db)):
 def put_turno_id(turno_id: int, turno_update: schemasTurno.TurnoUpdate, db: Session = Depends(get_db)):
     try:
         updated = crudTurno.update_turno(db, turno_id, turno_update)
-
         if updated is None:
-            #Si CRUD devuelve NONE, no encontrado
-            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail= "Turno no encontrado")
-        
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Turno no encontrado")
         return updated
-    
     except HTTPException:
         raise
-
     except PermissionError as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail= str(e)) #No tiene permiso 
-    
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= str(e)) #Error al validar los datos
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except TypeError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Datos invalidos: {str(e)}")
-    
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"Error inesperado: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
