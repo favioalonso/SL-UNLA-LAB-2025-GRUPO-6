@@ -6,7 +6,7 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
 
 ## Características
 
-- API RESTful para operaciones CRUD sobre personas.
+- API RESTful para operaciones CRUD sobre personas y turnos.
 - Validación de datos con Pydantic.
 - Base de datos SQLite.
 - Cálculo automático de la edad.
@@ -47,6 +47,12 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
 - `GET /personas/{persona_id}` : Obtener una persona por ID.
 - `PUT /personas/{persona_id}` : Actualizar una persona.
 - `DELETE /personas/{persona_id}` : Eliminar una persona.
+- `POST /turnos` : Crear un nuevo turno.
+- `GET /turnos` : Listar todos los turnos.
+- `GET /turnos/{turnos_id}` : Obtener un turno por ID.
+- `PUT /turnos/{turnos_id}` : Actualizar un turno.
+- `DELETE /turnos/{turnos_id}` : Eliminar un turno.
+  
 
 ## Estructura del proyecto
 
@@ -54,7 +60,8 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
 ├── main.py         # Punto de entrada de la API
 ├── models.py       # Definición de modelos SQLAlchemy
 ├── schemas.py      # Esquemas Pydantic
-├── crud.py         # Funciones CRUD
+├── crud.py         # Funciones CRUD Personas
+├── crudTurno.py    # Funciones CRUD Turnos
 ├── database.py     # Configuración de la base de datos
 ├── requirements.txt
 ├── README.md
