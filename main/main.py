@@ -244,10 +244,10 @@ def get_turnos_disponibles(fecha:date, db: Session = Depends(get_db)):
     try:
         lista_disponibles = crudTurno.get_turnos_disponibles(fecha, db)
         if not lista_disponibles:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No hay horarios disponibles para la fecha {fecha}")
+            raise HTTPException(status_code=404, detail=f"No hay horarios disponibles para la fecha {fecha}")
         return schemasTurno.HorariosResponse(fecha=fecha,horarios_disponibles=lista_disponibles)
     except Exception as e:
-       raise HTTPException(status_shcode=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=f"Error al obtener los turnos disponbiles: {e}")
+       raise HTTPException(status_code=500,detail=f"Error al obtener los turnos disponbiles: {e}")
         
 @app.get("/turnos/{turno_id}", response_model=schemasTurno.TurnoOut)
 def get_turno_id(turno_id: int, db: Session = Depends(get_db)):
