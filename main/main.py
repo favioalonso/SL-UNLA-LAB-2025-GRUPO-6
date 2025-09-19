@@ -4,7 +4,7 @@ from typing import Optional
 import models.models as models, schemas.schemas as schemas, schemas.schemasTurno as schemasTurno, crud.crud as crud, crud.crudTurno as crudTurno
 from database.database import SessionLocal, engine, Base
 from crud.crudTurno import DatabaseResourceNotFound
-
+from datetime import date as date
 # Crea las tablas en la base de datos (si no existen)
 models.Base.metadata.create_all(bind=engine)
 
