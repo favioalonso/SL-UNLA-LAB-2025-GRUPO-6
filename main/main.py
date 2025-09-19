@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
-import models.models as models, schemas.schemas as schemas, crud.crud as crud
+import models.models as models, schemas.schemas as schemas, schemas.schemasTurno as schemasTurno, crud.crud as crud, crud.crudTurno as crudTurno
 from database.database import SessionLocal, engine, Base
-from crudTurno import DatabaseResourceNotFound
+from crud.crudTurno import DatabaseResourceNotFound
 
 # Crea las tablas en la base de datos (si no existen)
 models.Base.metadata.create_all(bind=engine)
