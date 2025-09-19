@@ -217,10 +217,7 @@ def crear_turno(turno: schemasTurno.TurnoCreate, db: Session = Depends(get_db)):
 @app.get("/turnos", response_model=list[schemasTurno.TurnoOut])
 def get_turnos(db: Session = Depends(get_db), skip:int = 0, limit:int = 100):
     try:
-
         turnos_db = crudTurno.get_turnos(db, skip, limit)
-        if not turnos_db:
-            raise HTTPException(status_code= status.HTTP_204_NO_CONTENT)
         return turnos_db
     
     except HTTPException:
