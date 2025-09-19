@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 import models.models as models, schemas.schemas as schemas, crud.crud as crud
 from database.database import SessionLocal, engine, Base
+from crudTurno import DatabaseResourceNotFound
 
 # Crea las tablas en la base de datos (si no existen)
 models.Base.metadata.create_all(bind=engine)
@@ -188,3 +189,45 @@ def delete_persona(persona_id: int, db: Session = Depends(get_db)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+
+
+@app.post("/turnos",response_model= schemasTurno.TurnoOut, status_code=status.HTTP_201_CREATED)
+def crear_turno(turno: schemasTurno.TurnoCreate, db: Session = Depends(get_db)):
+    try:
+        return crudTurno.create_turnos(db,turno)
+    
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    
+    except PermissionError as e:
+        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail=str(e))
+    
+    except DatabaseResourceNotFound as e:
+        raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail=str(e))
+    
+    except HTTPException:
+        raise
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error inesperado: {str(e)}"
+        )
+
+@app.get("/turnos", response_model=list[schemasTurno.TurnoOut])
+def get_turnos(db: Session = Depends(get_db), skip:int = 0, limit:int = 100):
+    try:
+
+        turnos_db = crudTurno.get_turnos(db, skip, limit)
+        if not turnos_db:
+            raise HTTPException(status_code= status.HTTP_204_NO_CONTENT)
+        return turnos_db
+    
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error inesperado: {str(e)}"
+        )
