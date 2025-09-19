@@ -231,3 +231,47 @@ def get_turnos(db: Session = Depends(get_db), skip:int = 0, limit:int = 100):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error inesperado: {str(e)}"
         )
+        
+@app.get("/turnos/{turno_id}", response_model=schemasTurno.TurnoOut)
+def get_turno_id(turno_id: int, db: Session = Depends(get_db)):
+    try:
+        turno = crudTurno.get_turno(db, turno_id)
+
+        if turno is None:
+            raise ValueError("Turno no encontrado")
+        return turno
+    
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) #Turno no encontrado
+    
+    except TypeError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Dato invalido: {str(e)}") #No es del tipo int el id
+    
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
+
+@app.put("/turnos/{turno_id}", response_model=schemasTurno.TurnoOut)
+def put_turno_id(turno_id: int, turno_update: schemasTurno.TurnoUpdate, db: Session = Depends(get_db)):
+    try:
+        updated = crudTurno.update_turno(db, turno_id, turno_update)
+
+        if updated is None:
+            #Si CRUD devuelve NONE, no encontrado
+            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail= "Turno no encontrado")
+        
+        return updated
+    
+    except HTTPException:
+        raise
+
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail= str(e)) #No tiene permiso 
+    
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= str(e)) #Error al validar los datos
+    
+    except TypeError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Datos invalidos: {str(e)}")
+    
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"Error inesperado: {str(e)}")
