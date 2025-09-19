@@ -1,5 +1,6 @@
 
-from sqlalchemy import Column, Integer, String, Date, Boolean
+from sqlalchemy import Column, Integer, String, Date, Boolean, Time, ForeignKey
+from sqlalchemy.orm import relationship
 from database.database import Base
 
 class Persona(Base):
@@ -11,3 +12,17 @@ class Persona(Base):
     telefono = Column(String, index=True, nullable=False)
     fecha_nacimiento = Column(Date, nullable=False)
     habilitado = Column(Boolean, default=True, nullable=False)
+    
+    turnos = relationship("Turno", back_populates="persona")
+
+class Turno(Base):
+    __tablename__ = "turnos"
+    id = Column(Integer, primary_key=True, index=True)
+    fecha = Column(Date, nullable=False)
+    hora = Column(Time, nullable=False)
+    estado = Column(String, default= "Pendiente")
+
+    persona_id = Column(Integer, ForeignKey("personas.id"), nullable=False)
+
+    persona = relationship("Persona", back_populates="turnos")
+
