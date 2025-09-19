@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from typing import Optional
 import models.models as models, schemas.schemas as schemas, crud.crud as crud
 from database.database import SessionLocal, engine, Base
 
@@ -39,6 +40,41 @@ def read_personas(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
         return crud.get_personas(db, skip=skip, limit=limit)
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+
+
+@app.get("/personas/search", response_model=schemas.PaginatedPersonaResponse)
+def search_personas(
+    nombre: Optional[str] = Query(None, description="Buscar por nombre (búsqueda parcial)"),
+    email: Optional[str] = Query(None, description="Buscar por email (búsqueda parcial)"),
+    edad_min: Optional[int] = Query(None, ge=0, le=150, description="Edad mínima"),
+    edad_max: Optional[int] = Query(None, ge=0, le=150, description="Edad máxima"),
+    order_by: Optional[str] = Query("id", description="Campo para ordenar: id, nombre, edad, fecha_nacimiento, email"),
+    order: Optional[str] = Query("asc", description="Orden: asc o desc"),
+    page: int = Query(1, ge=1, description="Número de página"),
+    per_page: int = Query(10, ge=1, le=100, description="Elementos por página"),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Validar que edad_min <= edad_max
+        if edad_min is not None and edad_max is not None and edad_min > edad_max:
+            raise HTTPException(status_code=400, detail="edad_min no puede ser mayor que edad_max")
+
+        # Crear filtros
+        filters = schemas.PersonaFilter(
+            nombre=nombre,
+            email=email,
+            edad_min=edad_min,
+            edad_max=edad_max,
+            order_by=order_by,
+            order=order
+        )
+
+        return crud.get_personas_filtered(db, filters, page, per_page)
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
 
@@ -92,4 +128,3 @@ def delete_persona(persona_id: int, db: Session = Depends(get_db)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
-
