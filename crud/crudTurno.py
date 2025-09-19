@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_
-import models.models as mosdels, schemas.schemasTurno as schemasTurno
+import models.models as models, schemas.schemasTurno as schemasTurno
 from datetime import date, time, timedelta, datetime
 from crud.crud import calcular_edad
 
@@ -196,6 +196,7 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
    except Exception as e:
        db.rollback() #creamos un rollback por si hay un error que no modifique los datos que ya estaban
        raise e
+
 
 
 
