@@ -109,14 +109,16 @@ def get_turnos(db: Session, skip: int, limit: int):
 #Funcion para eliminar turno por id
 def delete_turno(turno_id: int, db: Session):
     
-    #Podria agregar un rollback?
-    
-    turno_eliminar = db.query(models.Turno).filter(models.Turno.id == turno_id).first()
-    if turno_eliminar:
-        db.delete(turno_eliminar)
-        db.commit()
-        return True #exito
-    return False
+    try:
+        turno_eliminar = db.query(models.Turno).filter(models.Turno.id == turno_id).first()
+        if turno_eliminar:
+            db.delete(turno_eliminar)
+            db.commit()
+            return True #exito
+        return False
+    except Exception as e:
+        db.rollback() #No se modifica la base de datos
+        raise e
 
 #Funcion para sumar 30 minutos a una hora:time
 def siguiente_hora(hora_actual:time):
@@ -205,6 +207,7 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
    except Exception as e:
        db.rollback() #creamos un rollback por si hay un error que no modifique los datos que ya estaban
        raise e
+
 
 
 
