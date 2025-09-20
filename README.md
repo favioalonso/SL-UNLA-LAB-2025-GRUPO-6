@@ -169,7 +169,7 @@ La aplicación incluye datos de prueba que se crean automáticamente al iniciar:
 
 La API incluye manejo robusto de errores con:
 - Códigos de estado HTTP apropiados
-- Mensajes de error descriptivos en español
+- Mensajes de error descriptivos
 - Validación de datos de entrada
 - Manejo de excepciones de base de datos
 
@@ -182,11 +182,6 @@ El proyecto sigue el patrón de **Arquitectura Limpia** con:
 - **Modelos Pydantic**: Para validación automática y serialización
 - **SQLAlchemy ORM**: Para abstracción de base de datos
 
-### Convenciones de Código
-- Nombres de variables y comentarios en español (contexto educativo)
-- Type hints en toda la aplicación
-- Manejo consistente de errores
-- Documentación de endpoints automática
 
 ## Licencia
 
@@ -196,7 +191,3 @@ Este proyecto está bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE)
 
 **Desarrollado por estudiantes de la Universidad de Lanús para Seminario de Lenguajes - 2025**
 
-### Equipo de Desarrollo
-- Sistema de gestión de personas y turnos
-- Implementación de API REST con FastAPI
-- Integración completa con base de datos SQLite
