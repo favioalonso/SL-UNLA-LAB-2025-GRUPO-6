@@ -133,6 +133,11 @@ def siguiente_hora(hora_actual:time):
 
 #Funcion para mostrar turnos disponibles por fecha ingresada
 def get_turnos_disponibles(fecha: date, db: Session):
+    #Validacion por fecha (No se pueden ver los turnos de dias anteriores a hoy)
+    hoy = datetime.today()
+    if fecha < hoy.date():
+        raise Exception("La fecha no puede ser anterior al día de hoy")
+        
     turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(and_(models.Turno.fecha == fecha, or_(models.Turno.estado == "Pendiente", models.Turno.estado == "Confirmado"))).all()]
 
     #Define el rango horario
@@ -207,6 +212,7 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
    except Exception as e:
        db.rollback() #creamos un rollback por si hay un error que no modifique los datos que ya estaban
        raise e
+
 
 
 
