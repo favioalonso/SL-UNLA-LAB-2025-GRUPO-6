@@ -142,7 +142,7 @@ def get_turnos_disponibles(fecha: date, db: Session):
 
     #Define el rango horario
     hora_inicio = time(hour=9, minute=0)
-    hora_fin =  time(hour=17,minute=30)
+    hora_fin =  time(hour=16,minute=30)
     posibles_turnos = [] #lista de horarios disponibles
     
     #Bucle para buscar turnos disponibles
@@ -212,6 +212,7 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
    except Exception as e:
        db.rollback() #creamos un rollback por si hay un error que no modifique los datos que ya estaban
        raise e
+
 
 
 
