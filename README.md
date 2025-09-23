@@ -63,9 +63,8 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
    - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 3. **Accede a la Collection de Postman:**
-   - Descarga el archivo .json
-   - Importa el archivo a Postman
-   
+   - Descarga el archivo de la [Collection](./Collection.postman_collection.json)
+   - Importa el archivo a [Postman](https://www.postman.com/)
 
 ## Endpoints API
 
