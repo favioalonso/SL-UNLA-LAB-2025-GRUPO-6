@@ -62,32 +62,32 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
    - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
    - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
    - 
-3. **Accede a Workspace de Postman:**
-   [(https://app.getpostman.com/join-team?invite_code=ff470f8190770e7d43c99c42380556c769036e3bd5807cbfd9fa45a247727768&target_code=6b537417a5a6446835a556aace79f2c5)]
+3. **Accede al archivo .json de Postman:**
+   
 
 ## Endpoints API
 
 ### 📋 Personas
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `POST` | `/personas` | Crear una nueva persona |
-| `GET` | `/personas` | Listar todas las personas (con paginación) |
-| `GET` | `/personas/search` | Búsqueda avanzada con filtros |
-| `GET` | `/personas/{persona_id}` | Obtener una persona por ID |
-| `PUT` | `/personas/{persona_id}` | Actualizar una persona |
-| `DELETE` | `/personas/{persona_id}` | Eliminar una persona |
+| Método | Endpoint | Descripción | Desarrollado por |
+|--------|----------|-------------|------------------|
+| `POST` | `/personas` | Crear una nueva persona | Favio Alonso |
+| `GET` | `/personas` | Listar todas las personas (con paginación) | Favio Alonso |
+| `GET` | `/personas/search` | Búsqueda avanzada con filtros | Favio Alonso |
+| `GET` | `/personas/{persona_id}` | Obtener una persona por ID | Favio Alonso |
+| `PUT` | `/personas/{persona_id}` | Actualizar una persona | Favio Alonso |
+| `DELETE` | `/personas/{persona_id}` | Eliminar una persona | Favio Alonso |
 
 ### 🗓️ Turnos
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `POST` | `/turnos` | Crear un nuevo turno |
-| `GET` | `/turnos` | Listar todos los turnos (con paginación) |
-| `GET` | `/turnos/{turno_id}` | Obtener un turno por ID |
-| `PUT` | `/turnos/{turno_id}` | Actualizar un turno |
-| `DELETE` | `/turnos/{turno_id}` | Eliminar un turno |
-| `GET` | `/turnos/turnos-disponibles` | Obtener horarios disponibles por fecha |
+| Método | Endpoint | Descripción | Desarrollado por |
+|--------|----------|-------------|------------------|
+| `POST` | `/turnos` | Crear un nuevo turno | Marcos Charadia |
+| `GET` | `/turnos` | Listar todos los turnos (con paginación) | Marcos Charadia |
+| `GET` | `/turnos/{turno_id}` | Obtener un turno por ID | Gonzalo Liberatori |
+| `PUT` | `/turnos/{turno_id}` | Actualizar un turno | Gonzalo Liberatori |
+| `DELETE` | `/turnos/{turno_id}` | Eliminar un turno | Martina Martinez |
+| `GET` | `/turnos/turnos-disponibles` | Obtener horarios disponibles por fecha | Martina Martinez |
 
 ## Funcionalidades del Sistema de Turnos
 
