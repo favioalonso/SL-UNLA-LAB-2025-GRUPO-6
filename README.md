@@ -62,7 +62,9 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
    - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
    - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
-3. **Accede al archivo .json de Postman:**
+3. **Accede a la Collection de Postman:**
+   - Descarga el archivo .json
+   - Importa el archivo a Postman
    
 
 ## Endpoints API
