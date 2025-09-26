@@ -186,6 +186,8 @@ El proyecto sigue el patrón de **Arquitectura Limpia** con:
 - **Modelos Pydantic**: Para validación automática y serialización
 - **SQLAlchemy ORM**: Para abstracción de base de datos
 
+## Link al video
+https://drive.google.com/file/d/1zRo9_vqyDQRZcNrbqrovAnPfdVERRIvS/view?usp=sharing
 
 ## Licencia
 
