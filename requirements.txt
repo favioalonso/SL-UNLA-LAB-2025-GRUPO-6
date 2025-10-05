@@ -5,3 +5,6 @@ pydantic==2.9.2
 pandas==2.2.2
 python-dateutil==2.9.0.post0
 borb==2.1.22
+dotenv==0.9.9
+pathlib==1.0.1
+ 

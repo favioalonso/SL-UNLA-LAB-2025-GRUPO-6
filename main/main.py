@@ -2,6 +2,8 @@ from fastapi import FastAPI, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import date
+from functools import lru_cache
+
 
 # Imports
 import models.models as models
@@ -16,6 +18,15 @@ from crud.crudTurno import DatabaseResourceNotFound
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+#-------------------------------------------------------------------------------------------------------------------------------
+#Se utiliza el decorador 'lru_cache' para no leer repetidamente el archivo .env
+@lru_cache
+def cargar_variables_entorno():
+    return schemasTurno.ConfHorarios()
+#Cada vez que se llame a cargar_configuracion() se retorna lo guardado en el caché
+#-------------------------------------------------------------------------------------------------------------------------------
+
 
 # Función para crear datos de prueba
 def create_sample_data():
@@ -234,12 +245,16 @@ def delete_turno(turno_id: int, db: Session = Depends(get_db)):
 @app.get("/turnos/turnos-disponibles", response_model=schemasTurno.HorariosResponse)
 def get_turnos_disponibles(fecha: date, db: Session = Depends(get_db)):
     try:
+        if fecha.weekday() == 6: 
+            return "No se atiende los días domingos, por favor ingresar una fecha de lunes a sábados"
         lista_disponibles = crudTurno.get_turnos_disponibles(fecha, db)
         if not lista_disponibles:
             raise HTTPException(status_code=404, detail=f"No hay horarios disponibles para la fecha {fecha}")
+        
         return schemasTurno.HorariosResponse(fecha=fecha, horarios_disponibles=lista_disponibles)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener los turnos disponibles: {e}")
+
 
 @app.get("/turnos/{turno_id}", response_model=schemasTurno.TurnoOut)
 def get_turno_id(turno_id: int, db: Session = Depends(get_db)):

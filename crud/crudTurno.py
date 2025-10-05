@@ -3,6 +3,16 @@ from sqlalchemy import func, and_, or_
 import models.models as models, schemas.schemasTurno as schemasTurno
 from datetime import date, time, timedelta, datetime
 from crud.crud import calcular_edad
+from copy import copy
+
+"""
+USO DEL ARCHIVO DE VARIABLES DE ENTORNO .ENV
+
+- Está definido en schemasTurnos en 'settings'
+- Para acceder a la lista del rango horario -> schemasTurnos.settings.horarios_turnos
+- Para acceder a la lista de estados posibles de un turno -> schemasTurnos.settings.estados_turnos
+
+"""
 
 
 #Funciones para validad los atributos del cuerpo de entrada de datos
@@ -137,9 +147,11 @@ def get_turnos_disponibles(fecha: date, db: Session):
     hoy = datetime.today()
     if fecha < hoy.date():
         raise Exception("La fecha no puede ser anterior al día de hoy")
-        
+    franja_horaria = copy(schemasTurno.settings.horarios_turnos)   
     turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(and_(models.Turno.fecha == fecha, or_(models.Turno.estado == "Pendiente", models.Turno.estado == "Confirmado"))).all()]
-
+    for reservado in turnos_reservados:
+        if reservado in franja_horaria:
+            franja_horaria.remove(reservado)
     #Define el rango horario
     hora_inicio = time(hour=9, minute=0)
     hora_fin =  time(hour=16,minute=30)
