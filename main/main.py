@@ -244,9 +244,10 @@ def delete_turno(turno_id: int, db: Session = Depends(get_db)):
 
 @app.get("/turnos/turnos-disponibles", response_model=schemasTurno.HorariosResponse)
 def get_turnos_disponibles(fecha: date, db: Session = Depends(get_db)):
-    try:
-        if fecha.weekday() == 6: 
-            return "No se atiende los días domingos, por favor ingresar una fecha de lunes a sábados"
+
+    if fecha.weekday() == 6: 
+            raise HTTPException(status_code=404, detail="No se atiende los días domingos, por favor ingresar una fecha de lunes a sábado")
+    try: 
         lista_disponibles = crudTurno.get_turnos_disponibles(fecha, db)
         if not lista_disponibles:
             raise HTTPException(status_code=404, detail=f"No hay horarios disponibles para la fecha {fecha}")
