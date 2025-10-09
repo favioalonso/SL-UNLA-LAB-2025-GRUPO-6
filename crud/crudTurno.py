@@ -118,14 +118,21 @@ def get_turnos(db: Session, skip: int, limit: int):
         raise Exception(f"Error al consultar turnos: {e}")
 #Funcion para eliminar turno por id
 def delete_turno(turno_id: int, db: Session):
-    
+
     try:
         turno_eliminar = db.query(models.Turno).filter(models.Turno.id == turno_id).first()
         if turno_eliminar:
+            # Validar que el turno no esté asistido
+            if turno_eliminar.estado.lower() == "asistido":
+                raise ValueError("No se puede eliminar un turno que ya fue asistido")
+
             db.delete(turno_eliminar)
             db.commit()
             return True #exito
         return False
+    except ValueError:
+        # Re-lanzar ValueError para que sea manejado por el endpoint
+        raise
     except Exception as e:
         db.rollback() #No se modifica la base de datos
         raise e
@@ -176,6 +183,60 @@ def get_turno(db: Session, turno_id: int):
     except Exception as e:
         raise Exception(f"Error al consultar turno: {e}")
 
+#Funcion para cancelar un turno específico
+def cancelar_turno(db: Session, turno_id: int):
+    from sqlalchemy.orm import joinedload
+    turno_db = db.query(models.Turno).options(joinedload(models.Turno.persona)).filter(models.Turno.id == turno_id).first()
+
+    if not turno_db:
+        return None
+
+    # Validar que el turno no esté ya asistido
+    if turno_db.estado.lower() == "asistido":
+        raise ValueError("No se puede cancelar un turno que ya fue asistido")
+
+    # Validar que el turno no esté ya cancelado
+    if turno_db.estado.lower() == "cancelado":
+        raise ValueError("El turno ya está cancelado")
+
+    try:
+        # Cambiar estado a cancelado
+        turno_db.estado = "Cancelado"
+        db.commit()
+        db.refresh(turno_db)
+
+        return turno_diccionario(turno_db, turno_db.persona)
+    except Exception as e:
+        db.rollback()
+        raise e
+
+#Funcion para confirmar un turno específico
+def confirmar_turno(db: Session, turno_id: int):
+    from sqlalchemy.orm import joinedload
+    turno_db = db.query(models.Turno).options(joinedload(models.Turno.persona)).filter(models.Turno.id == turno_id).first()
+
+    if not turno_db:
+        return None
+
+    # Validar que el turno no esté ya asistido
+    if turno_db.estado.lower() == "asistido":
+        raise ValueError("No se puede confirmar un turno que ya fue asistido")
+
+    # Validar que el turno no esté cancelado
+    if turno_db.estado.lower() == "cancelado":
+        raise ValueError("No se puede confirmar un turno cancelado")
+
+    try:
+        # Cambiar estado a confirmado
+        turno_db.estado = "Confirmado"
+        db.commit()
+        db.refresh(turno_db)
+
+        return turno_diccionario(turno_db, turno_db.persona)
+    except Exception as e:
+        db.rollback()
+        raise e
+
 #Funcion para actualizar su turno por ID
 def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpdate):
    from sqlalchemy.orm import joinedload
@@ -183,6 +244,11 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
 
    if not turno_db:
        return None
+
+   # Validar que el turno no esté asistido o cancelado antes de modificar
+   if turno_db.estado.lower() in ["asistido", "cancelado"]:
+       raise ValueError(f"No se puede modificar un turno {turno_db.estado.lower()}")
+
    #Si ingresa valores nuevos los cambia, pero si no lo hace quedan los mismos
    nueva_fecha = turno_update.fecha if turno_update.fecha is not None else turno_db.fecha
    nueva_hora = turno_update.hora if turno_update.hora is not None else turno_db.hora

@@ -12,6 +12,7 @@ import schemas.schemasTurno as schemasTurno
 import crud.crud as crud
 import crud.crudTurno as crudTurno
 from database.database import SessionLocal, engine
+from database.seed_data import create_sample_data
 from crud.crudTurno import DatabaseResourceNotFound
 
 # Crear tablas
@@ -28,62 +29,6 @@ def cargar_variables_entorno():
 #-------------------------------------------------------------------------------------------------------------------------------
 
 
-# Función para crear datos de prueba
-def create_sample_data():
-    db = SessionLocal()
-    try:
-        # Verificar si ya existen datos
-        if db.query(models.Persona).count() > 0:
-            return  # Ya hay datos, no crear más
-
-        # Datos de prueba
-        sample_personas = [
-            {
-                "nombre": "Juan Pérez",
-                "email": "juan@gmail.com",
-                "dni": "12345678",
-                "telefono": "1123456789",
-                "fecha_nacimiento": "1990-05-15"
-            },
-            {
-                "nombre": "María García",
-                "email": "maria@hotmail.com",
-                "dni": "87654321",
-                "telefono": "01134567890",
-                "fecha_nacimiento": "1985-08-20"
-            },
-            {
-                "nombre": "Carlos Rodriguez",
-                "email": "carlos@yahoo.com",
-                "dni": "11223344",
-                "telefono": "+5411987654321",
-                "fecha_nacimiento": "1995-12-10"
-            }
-        ]
-
-        # Crear las personas de prueba
-        for persona_data in sample_personas:
-            from datetime import datetime
-            fecha_obj = datetime.strptime(persona_data["fecha_nacimiento"], "%Y-%m-%d").date()
-
-            db_persona = models.Persona(
-                nombre=persona_data["nombre"],
-                email=persona_data["email"],
-                dni=persona_data["dni"],
-                telefono=persona_data["telefono"],
-                fecha_nacimiento=fecha_obj,
-                habilitado=True
-            )
-            db.add(db_persona)
-
-        db.commit()
-        print("✅ Datos de prueba creados exitosamente")
-
-    except Exception as e:
-        print(f"❌ Error al crear datos de prueba: {e}")
-        db.rollback()
-    finally:
-        db.close()
 
 # Crear datos de prueba al iniciar la aplicación
 create_sample_data()
@@ -237,10 +182,20 @@ def crear_turno(turno: schemasTurno.TurnoCreate, db: Session = Depends(get_db)):
 
 @app.delete("/turnos/{turno_id}", response_model=schemasTurno.MensajeResponse)
 def delete_turno(turno_id: int, db: Session = Depends(get_db)):
-    db_turno = crudTurno.delete_turno(turno_id, db)
-    if not db_turno:
-        raise HTTPException(status_code=404, detail="Turno no encontrado")
-    return {"mensaje": "El turno ha sido eliminado exitosamente"}
+    try:
+        if turno_id <= 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El ID debe ser un número positivo")
+
+        db_turno = crudTurno.delete_turno(turno_id, db)
+        if not db_turno:
+            raise HTTPException(status_code=404, detail="Turno no encontrado")
+        return {"mensaje": "El turno ha sido eliminado exitosamente"}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
 
 @app.get("/turnos/turnos-disponibles", response_model=schemasTurno.HorariosResponse)
 def get_turnos_disponibles(fecha: date, db: Session = Depends(get_db)):
@@ -286,5 +241,41 @@ def put_turno_id(turno_id: int, turno_update: schemasTurno.TurnoUpdate, db: Sess
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except TypeError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Datos invalidos: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
+
+@app.put("/turnos/{turno_id}/cancelar", response_model=schemasTurno.TurnoOut)
+def cancelar_turno(turno_id: int, db: Session = Depends(get_db)):
+    try:
+        if turno_id <= 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El ID debe ser un número positivo")
+
+        turno_cancelado = crudTurno.cancelar_turno(db, turno_id)
+        if turno_cancelado is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Turno no encontrado")
+
+        return turno_cancelado
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
+
+@app.put("/turnos/{turno_id}/confirmar", response_model=schemasTurno.TurnoOut)
+def confirmar_turno(turno_id: int, db: Session = Depends(get_db)):
+    try:
+        if turno_id <= 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El ID debe ser un número positivo")
+
+        turno_confirmado = crudTurno.confirmar_turno(db, turno_id)
+        if turno_confirmado is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Turno no encontrado")
+
+        return turno_confirmado
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
