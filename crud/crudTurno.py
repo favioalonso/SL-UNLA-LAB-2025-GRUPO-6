@@ -4,6 +4,8 @@ import models.models as models, schemas.schemasTurno as schemasTurno
 from datetime import date, time, timedelta, datetime
 from crud.crud import calcular_edad
 from copy import copy
+from schemas.schemasTurno import settings
+
 
 """
 USO DEL ARCHIVO DE VARIABLES DE ENTORNO .ENV
@@ -13,6 +15,7 @@ USO DEL ARCHIVO DE VARIABLES DE ENTORNO .ENV
 - Para acceder a la lista de estados posibles de un turno -> schemasTurnos.settings.estados_turnos
 
 """
+
 
 
 #Funciones para validad los atributos del cuerpo de entrada de datos
@@ -267,15 +270,19 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
        func.strftime('%H:%M', models.Turno.hora) == nueva_hora.strftime('%H:%M'), #pasa el dato a str con horas y minutos para poder compararlo
        models.Turno.id != turno_db.id
    ).first()
+
     #si es existente, error
    if existente:
        raise ValueError("Ya existe un turno reservado en esa fecha y hora")
    
-   
-   if turno_update.estado is not None:
-       estados_permitidos = {"pendiente", "cancelado", "confirmado", "asistido"}
-       if turno_update.estado.lower() not in estados_permitidos: #verifica el estado que se cambia teniendo en cuenta minusculas   
-           raise ValueError(f"Estado inválido. Los estados permitidos son: {', '.join(estados_permitidos)}") #Si no es ninguno de los mencionados tira un mensaje
+   if turno_update.estado is not None: #Verifica si el usuario quiere modificar el turno
+        estados_permitidos = settings.estados_turnos #Trae la lista de estados del archivo .env
+        if turno_update.estado.lower() not in [i.lower() for i in estados_permitidos]: #cree un array para que todos los estados permitidos se tomen como minusculas tambien   
+            raise ValueError( #si el estado enviado no esta en la lista va a este raise, sino sigue con el programa
+                 f"Estado inválido. Los estados permitidos son: {', '.join(estados_permitidos)}" #Si no es ninguno de los mencionados tira un mensaje
+        )
+
+
    
    try:
        #Asignacion de los nuevos valores
