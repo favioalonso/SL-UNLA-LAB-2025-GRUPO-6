@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, or_
 import models.models as models, schemas.schemasTurno as schemasTurno
 from datetime import date, time, timedelta, datetime
@@ -298,8 +298,23 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
        db.rollback() #creamos un rollback por si hay un error que no modifique los datos que ya estaban
        raise e
 
+def get_turnos_por_dni(db: Session, dni: str):
+    
+    #Filtra a la persona por dni
+    persona = db.query(models.Persona).filter(models.Persona.dni == dni).first()
+    if not persona:
+        return None #Si no la encuentra devuelve None
+    
+    #Buscar todos los turnos de la persona
+    turnos_db = db.query(models.Turno).options(joinedload(models.Turno.persona)).filter(models.Turno.persona_id == persona.id).all()
 
+    #Hacer la conversion de los datos
+    resultado = []
+    for turno in turnos_db:
+        #Bucle para convertir y añadir el diccionario a la lista
+        resultado.append(turno_diccionario(turno,turno.persona))
 
+    return resultado
 
 
 

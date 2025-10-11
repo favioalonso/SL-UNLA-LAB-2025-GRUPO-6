@@ -279,3 +279,28 @@ def confirmar_turno(turno_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
+    
+@app.get("/reportes/turnos-por-persona", response_model= list[schemasTurno.TurnoOut])
+def get_turnos_por_persona(dni: str = Query(
+        description="DNI de la persona(8 digitos)",
+        min_length=8,
+        max_length=8,
+        regex=r"\d{8}"  #\d: tiene que ser numerico - {8}: ocho digitos  
+        #regex: patron de busqueda, le digo que restricciones tiene que tener el dni (r: para que no interprete como barra invertida el \d)
+        #Defino el formato del dni con sus validaciones
+    ),
+    db: Session = Depends(get_db)):
+    try:
+        turnos = crudTurno.get_turnos_por_dni(db, dni)
+        if turnos is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No se encontró una persona con el DNI {dni}")
+        return turnos
+    
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except TypeError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Dato invalido: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
