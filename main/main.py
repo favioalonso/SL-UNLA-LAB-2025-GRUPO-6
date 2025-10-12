@@ -279,7 +279,9 @@ def confirmar_turno(turno_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
-    
+
+# ============ ENDPOINTS DE REPORTES ============
+
 @app.get("/reportes/turnos-por-persona", response_model= list[schemasTurno.TurnoOut])
 def get_turnos_por_persona(dni: str = Query(
         description="DNI de la persona(8 digitos)",
@@ -294,13 +296,35 @@ def get_turnos_por_persona(dni: str = Query(
         turnos = crudTurno.get_turnos_por_dni(db, dni)
         if turnos is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No se encontró una persona con el DNI {dni}")
+
+        #Persona con dni existente pero sin turnos
+        if not turnos:
+            raise HTTPException(status_code=404, detail=f"La persona con DNI {dni} existe pero no tiene turnos registrados.")
+        
         return turnos
-    
+
     except HTTPException:
         raise
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except TypeError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Dato invalido: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
+    
+
+@app.get("/reportes/turnos-cancelados", response_model=list[schemasTurno.PersonaConTurnosCancelados])
+def get_reporte_turnos_cancelados(
+    #Parametro de entrada, por defecto esta en 5
+    min: int = Query(5, description="Número mínimo de turnos cancelados para incluir a una persona", ge=5), #ge: greater than or equal to, mayor o igual que 5
+    db:Session = Depends(get_db)
+):
+    
+    try:
+        reporte_personas= crudTurno.get_personas_turnos_cancelados(db, min_cancelados= min) #busqueda y entrega de resultados
+        if not reporte_personas:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No se encontraron personas con {min} o mas turnos cancelados")
+        return reporte_personas
+    
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")

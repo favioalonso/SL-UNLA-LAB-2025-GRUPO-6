@@ -42,6 +42,12 @@ class HorariosResponse(BaseModel):
 class MensajeResponse(BaseModel):
     mensaje: str
 
+#Clase para ver a las personas con sus turnos cancelados
+class PersonaConTurnosCancelados(BaseModel):
+    persona: PersonaOut
+    turnos_cancelados_contador: int
+    turnos_cancelados_detalle: List[TurnoOut] #Lista de los turnos cancelados para mostrar el detalle
+
 #Carga las variables del archivo .env
 load_dotenv()
 

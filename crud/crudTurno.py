@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, or_
-import models.models as models, schemas.schemasTurno as schemasTurno
+import models.models as models, schemas.schemasTurno as schemasTurno, schemas.schemas as schemas
 from datetime import date, time, timedelta, datetime
 from crud.crud import calcular_edad
 from copy import copy
@@ -298,6 +298,8 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
        db.rollback() #creamos un rollback por si hay un error que no modifique los datos que ya estaban
        raise e
 
+
+#Funcion para el reporte de turnos por dni
 def get_turnos_por_dni(db: Session, dni: str):
     
     #Filtra a la persona por dni
@@ -306,6 +308,7 @@ def get_turnos_por_dni(db: Session, dni: str):
         return None #Si no la encuentra devuelve None
     
     #Buscar todos los turnos de la persona
+    #joinedload sirve para optimizar la instruccion, en vez de consultar por cada turno para que traiga los datos, los trae a todos en un solo llamado
     turnos_db = db.query(models.Turno).options(joinedload(models.Turno.persona)).filter(models.Turno.persona_id == persona.id).all()
 
     #Hacer la conversion de los datos
@@ -317,6 +320,47 @@ def get_turnos_por_dni(db: Session, dni: str):
     return resultado
 
 
+#Funcion del reporte de turnos cancelados (minimo 5)
 
+def get_personas_turnos_cancelados(db: Session, min_cancelados: int):
 
+    personas_estado_cancelado =(
+    db.query(models.Persona, func.count(models.Turno.id).label("contador_de_turnos_cancelados")) #Trae a la persona, y un contador de sus turnos cancelados
+    .join(models.Turno, models.Persona.id == models.Turno.persona_id).filter (models.Turno.estado == "Cancelado")
+    #Uso join para unir a la persona con sus turnos mediante el persona_id y filtro los del estado "cancelado"
+    .group_by(models.Persona.id) #Agrupamos por persona
+    .having(func.count(models.Turno.id) >= min_cancelados).all()
+     #filtrar por las personas que cumplen el minimo de turnos cancelados y mostrar los resultados
+    )
 
+    lista_cancelados = []
+
+    #Para cada persona encontrada, sacamos el detalle de sus turnos cancelados
+    for persona, count in personas_estado_cancelado:
+        turnos_cancelados_detalle = (
+            db.query(models.Turno).options(joinedload(models.Turno.persona))
+            .filter(
+                models.Turno.persona_id == persona.id, #filtramos los turnos de la persona
+                models.Turno.estado == "Cancelado" #filtramos por estado cancelado
+            )
+            .all() #devolvemos el detalle de los turnos
+        )
+
+        #Le damos una estructura limpia a los datos con turno_diccionario
+        turnos_limpios =[turno_diccionario(i, i.persona) for i in turnos_cancelados_detalle]
+
+        #Lo mismo para la persona
+        persona_estructurada = schemas.PersonaOut(
+            **persona.__dict__, #obtiene los datos de la persona y ** esto hace que los separe para que schemas de personasOut tome lo que necesita
+            edad= calcular_edad(persona.fecha_nacimiento)
+        )
+        
+        #creamos el diccionario para una estructura clara
+        lista_cancelados.append({
+            "persona": persona_estructurada, #tomamos los datos limpios de personas
+            "turnos_cancelados_contador": count, #sumamos el contador con el nombre que tiene en el schema
+            "turnos_cancelados_detalle": turnos_limpios, #sumamos los detalles de los turnos cancelados
+
+        })
+
+    return lista_cancelados #retornamos
