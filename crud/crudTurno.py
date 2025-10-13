@@ -374,3 +374,25 @@ def get_personas_turnos_cancelados(db: Session, min_cancelados: int):
         })
 
     return lista_cancelados #retornamos
+
+def get_turnos_por_fecha(db: Session, fecha: date):
+    turnos = (
+        db.query(models.Turno).options(joinedload(models.Turno.persona))
+        .filter(models.Turno.fecha == fecha)
+        .all()
+    )
+
+    turnos_lista = []
+    for turno in turnos:
+        turnos_lista.append({
+            "id": turno.id,
+            "fecha": turno.fecha,
+            "hora": turno.hora.strftime("%H:%M"),
+            "estado": turno.estado,
+            "persona": {
+                "nombre": turno.persona.nombre,
+                "dni": turno.persona.dni
+            }
+        })
+
+    return turnos_lista

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 from functools import lru_cache
 
 
@@ -330,3 +330,36 @@ def get_reporte_turnos_cancelados(
         raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
+    
+
+@app.get("/reportes/turnos-por-fecha", status_code=status.HTTP_200_OK)
+def get_turnos_por_fecha(
+    fecha: str = Query(...,
+        description="Fecha del día en formato YYYY-MM-DD",
+        example="2025-10-05"
+    ), db: Session = Depends(get_db)):
+
+    try:
+        fecha_valida = datetime.strptime(fecha, "%Y-%m-%d").date()
+        
+        turnos = crudTurno.get_turnos_por_fecha(db, fecha_valida)
+
+        if not turnos:
+            raise HTTPException(
+                status_code=status.HTTP_204_NO_CONTENT,
+            )
+
+        return {"fecha": fecha, "turnos": turnos}
+    
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato de fecha inválido o fecha inexistente. Use el formato YYYY-MM-DD."
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno del servidor: {str(e)}"
+        )
