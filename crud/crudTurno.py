@@ -396,3 +396,73 @@ def get_turnos_por_fecha(db: Session, fecha: date):
         })
 
     return turnos_lista
+
+def get_turnos_cancelados_mes_actual(db: Session):
+
+    hoy = datetime.now()
+    anio_actual = hoy.year
+    mes_actual = hoy.month
+ 
+    resultados = (
+        db.query(
+            func.date(models.Turno.fecha).label("dia"),
+            func.count(models.Turno.id).label("cantidad")
+        )
+        .filter(
+            func.strftime("%Y", models.Turno.fecha) == str(anio_actual),
+            func.strftime("%m", models.Turno.fecha) == f"{mes_actual:02d}",
+            func.lower(models.Turno.estado) == "cancelado"
+        )
+        .group_by(func.date(models.Turno.fecha))
+        .order_by(func.date(models.Turno.fecha))
+        .all()
+    )
+    
+    if not resultados:
+        return None
+    
+    turnos_por_dia = []
+    for fila in resultados:
+        dia = fila.dia
+        cantidad = fila.cantidad
+
+        turnos_dia = (
+            db.query(models.Turno)
+            .filter(
+                func.date(models.Turno.fecha) == dia,
+                func.lower(models.Turno.estado) == "cancelado"
+            ).all()
+        )
+
+        turnos_detalle = [
+            {
+                "id": turno.id,
+                "persona_id": turno.persona_id,
+                "fecha": turno.fecha.strftime("%Y-%m-%d"),
+                "hora": turno.hora.strftime("%H:%M"),
+                "estado": turno.estado
+            }
+            for turno in turnos_dia
+        ]
+        
+        turnos_por_dia.append({
+            "fecha": dia,
+            "cantidad_cancelados": cantidad,
+            "turnos": turnos_detalle
+        })
+        
+    meses= [
+        "enero", "febrero", "marzo", "abril", "mayo", "junio",
+        "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+    ]
+    mes_nombre = meses[mes_actual - 1]
+
+    total_turnos_cancelados = sum(fila.cantidad for fila in resultados)
+
+    return {
+        "anio": anio_actual,
+        "mes": mes_nombre,
+        "cantidad": total_turnos_cancelados,
+        "detalle_por_dia": turnos_por_dia
+    }
+
