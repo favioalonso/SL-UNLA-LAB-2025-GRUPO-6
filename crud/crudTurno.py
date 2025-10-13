@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, or_
+from sqlalchemy.exc import SQLAlchemyError
 import models.models as models, schemas.schemasTurno as schemasTurno, schemas.schemas as schemas
 from datetime import date, time, timedelta, datetime
 from crud.crud import calcular_edad
@@ -19,7 +20,7 @@ USO DEL ARCHIVO DE VARIABLES DE ENTORNO .ENV
 
 
 #Funciones para validad los atributos del cuerpo de entrada de datos
-def validar_fechaYhora(turno: schemasTurno.TurnoCreate):
+def validar_fecha_hora(turno: schemasTurno.TurnoCreate):
 
     if turno.hora.hour < 9 or turno.hora.hour >= 17:
         return "La hora debe ser entre las 9:00 y 16:30"
@@ -29,7 +30,7 @@ def validar_fechaYhora(turno: schemasTurno.TurnoCreate):
     
     if turno.fecha < date.today():
         return "La fecha no puede ser menor a la de hoy"
-    
+ 
     if turno.fecha.weekday() == 6: 
        return "No se pueden reservar turnos los domingos"
     
@@ -83,30 +84,39 @@ class DatabaseResourceNotFound(Exception):
 #Funcion para el endpoint POST/turnos
 def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
     
-    persona = db.query(models.Persona).filter(models.Persona.id == turno.persona_id).first()
+    try:
+        persona = db.query(models.Persona).filter(models.Persona.id == turno.persona_id).first()
 
-    if not persona: 
-        raise DatabaseResourceNotFound("Persona no encontrada")
+        if not persona: 
+            raise DatabaseResourceNotFound("Persona no encontrada")
     
-    if(not habilitar_persona(db, turno, persona)):
-        raise PermissionError ("La persona no esta habilitada")
+        if(not habilitar_persona(db, turno, persona)):
+            raise PermissionError ("La persona no esta habilitada")
     
-    error = validar_fechaYhora(turno)
-    if error:
-        raise ValueError(error)
-        
-    existente = db.query(models.Turno).filter(models.Turno.fecha == turno.fecha, func.strftime('%H:%M', models.Turno.hora) == turno.hora.strftime('%H:%M')).first()
+        error = validar_fecha_hora(turno)
+        if error:
+            raise ValueError(error)
+        #Corrijo la funcion para validar si el turno existe, teniendo en cuenta los cancelados que puedan estar en ese mismo horario
+        #Me permite reservar un horario aunque exista un turno en la base de datos con misma fecha y hora pero que este CANCELADO
+        existente_no_cancelado = (
+            db.query(models.Turno).filter(models.Turno.fecha == turno.fecha, 
+                                          func.strftime('%H:%M', models.Turno.hora) == turno.hora.strftime('%H:%M'),
+                                          models.Turno.estado != "Cancelado").first())#Si el estado es cancelado no lo tiene en cuenta
+        if existente_no_cancelado:
+            raise ValueError("El horario solicitado ya está reservado por otro paciente.")
+ 
+        nuevo_turno = models.Turno(**turno.dict())
 
-    if existente: 
-        raise ValueError("El turno ya esta reservado")
+        db.add(nuevo_turno)
+        db.commit()
+        db.refresh(nuevo_turno)
 
-    nuevo_turno = models.Turno(**turno.dict())
-
-    db.add(nuevo_turno)
-    db.commit()
-    db.refresh(nuevo_turno)
-
-    return turno_diccionario(nuevo_turno, persona)
+        return turno_diccionario(nuevo_turno, persona)
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise Exception(f"Error al crear el turno: {e}")
+    except Exception:
+        raise
 
 #Funcion para el endpoint GET/turnos
 def get_turnos(db: Session, skip: int, limit: int):
@@ -260,7 +270,7 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
 
     #creamos turno_provisional para que contenga los datos nuevos y llamamos a validar_fechaYhora para ver si cumple con las condiciones
    turno_provisional = schemasTurno.TurnoCreate(fecha= nueva_fecha, hora= nueva_hora, persona_id=turno_db.persona_id)
-   error = validar_fechaYhora(turno_provisional)
+   error = validar_fecha_hora(turno_provisional)
    if error:
        raise ValueError(error)
    
