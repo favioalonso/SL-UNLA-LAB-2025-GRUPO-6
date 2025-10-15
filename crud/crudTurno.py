@@ -104,8 +104,10 @@ def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
                                           models.Turno.estado != "Cancelado").first())#Si el estado es cancelado no lo tiene en cuenta
         if existente_no_cancelado:
             raise ValueError("El horario solicitado ya está reservado por otro paciente.")
- 
-        nuevo_turno = models.Turno(**turno.dict())
+
+        # Corrección: Cambio de .dict() (deprecado en Pydantic v2) a .model_dump()
+        # Esto previene warnings y asegura compatibilidad con futuras versiones de Pydantic
+        nuevo_turno = models.Turno(**turno.model_dump())
 
         db.add(nuevo_turno)
         db.commit()

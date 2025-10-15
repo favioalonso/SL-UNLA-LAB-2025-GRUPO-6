@@ -52,11 +52,11 @@ class PersonaConTurnosCancelados(BaseModel):
 load_dotenv()
 
 #Definición de ruta dinámica para leer el archivo .env
-RUTA_ARCHIVO_ENV = Path(__file__).resolve().parent/'.env'
+RUTA_ARCHIVO_ENV = Path(__file__).resolve().parent.parent/'.env'
 
 #'__file__' direcciona a la ruta del archivo actual
 #'resolve()' convierte la ruta en absoluta para ubicar el archivo en la terminal donde se ejecuta
-#'.parent' sube una carpeta
+#'.parent.parent' sube dos carpetas hasta la raíz del proyecto
 
 #Clase de variables de entorno
 class ConfiguracionInicial(BaseSettings):
