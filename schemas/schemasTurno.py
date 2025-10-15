@@ -1,8 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict 
 from datetime import date, time
 from schemas.schemas import PersonaOut
-from typing import Optional, List
+from typing import Optional, List, Dict
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -58,16 +58,32 @@ RUTA_ARCHIVO_ENV = Path(__file__).resolve().parent.parent/'.env'
 #'resolve()' convierte la ruta en absoluta para ubicar el archivo en la terminal donde se ejecuta
 #'.parent.parent' sube dos carpetas hasta la raíz del proyecto
 
-#Clase de variables de entorno
+# Clase de variables de entorno
 class ConfiguracionInicial(BaseSettings):
+    
+    #Variable de franja horaria 
     horarios_turnos: List[str] 
-    estados_turnos: List[str]
+    
+    #Variable de turnos posibles
+    estados_posibles: List[str]
 
     #Definimos la configuracion del archivo .env
     model_config = SettingsConfigDict(env_file=RUTA_ARCHIVO_ENV, env_file_encoding='utf-8') #'utf-8' asegura que no existan errores por caracteres extraños
     
-
+    #Convertimos 'estados_posibles' a un diccionario para filtrar por clave y evitar errores al comparar
+    
+    #Validor de formato Lista[str]
+    @field_validator('estados_posibles', mode='after')
+    @classmethod
+    def convertir_lista_a_dict(cls, valor_extraido: List[str]):
+        #Creamos un diccionario de pares clave-valor
+        diccionario_estados = {}
+        for par in valor_extraido:
+            par = par.strip() #Limpiar de espacios en blanco
+            if ':' in par:
+                clave, valor = par.split(':', 1) #Se separan en clave y valor
+                diccionario_estados[clave.strip()] = valor.strip()
+                
+        return diccionario_estados 
+    
 settings = ConfiguracionInicial()
-
-
-

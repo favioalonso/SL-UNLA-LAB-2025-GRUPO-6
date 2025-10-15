@@ -317,3 +317,4 @@ def get_reporte_turnos_cancelados(
         raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {str(e)}")
+    

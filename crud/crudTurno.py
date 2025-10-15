@@ -15,9 +15,15 @@ USO DEL ARCHIVO DE VARIABLES DE ENTORNO .ENV
 - Para acceder a la lista del rango horario -> schemasTurnos.settings.horarios_turnos
 - Para acceder a la lista de estados posibles de un turno -> schemasTurnos.settings.estados_turnos
 
+USO DE VARIABLE DE ESTADOS
+
+- Se trabaja con un diccionario con pares clave valor
+diccionario_estados = schemasTurnos.settings.estados_posibles 
+
+- Se accede a un estado a traves de su clave (no de su valor)
+estado_requerido = diccionario_estados.get('OPCION_ESTADO_XXXXX')
+
 """
-
-
 
 #Funciones para validad los atributos del cuerpo de entrada de datos
 def validar_fecha_hora(turno: schemasTurno.TurnoCreate):
@@ -169,11 +175,16 @@ def get_turnos_disponibles(fecha: date, db: Session):
     hoy = datetime.today()
     if fecha < hoy.date():
         raise Exception("La fecha no puede ser anterior al día de hoy")
-    franja_horaria = copy(schemasTurno.settings.horarios_turnos)   
-    turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(and_(models.Turno.fecha == fecha, or_(models.Turno.estado == "Pendiente", models.Turno.estado == "Confirmado"))).all()]
+    
+    #Variables para validacion de estado y fecha
+    franja_horaria = copy(schemasTurno.settings.horarios_turnos) #Acceder a lista de horarios de atencion del .env
+    estados_turnos = schemasTurno.settings.estados_posibles #Acceder al diccionario de estados del .env    
+    
+    turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(and_(models.Turno.fecha == fecha, or_(models.Turno.estado == estados_turnos.get('ESTADO_ASISTIDO'), models.Turno.estado == estados_turnos.get('ESTADO_CONFIRMADO')))).all()]
     for reservado in turnos_reservados:
         if reservado in franja_horaria:
             franja_horaria.remove(reservado)
+
     #Define el rango horario
     hora_inicio = time(hour=9, minute=0)
     hora_fin =  time(hour=16,minute=30)
