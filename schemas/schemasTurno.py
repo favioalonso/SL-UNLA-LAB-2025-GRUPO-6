@@ -59,7 +59,7 @@ RUTA_ARCHIVO_ENV = Path(__file__).resolve().parent/'.env'
 #'.parent' sube una carpeta
 
 #Clase de variables de entorno
-class ConfHorarios(BaseSettings):
+class ConfiguracionInicial(BaseSettings):
     horarios_turnos: List[str] 
     estados_turnos: List[str]
 
@@ -67,7 +67,7 @@ class ConfHorarios(BaseSettings):
     model_config = SettingsConfigDict(env_file=RUTA_ARCHIVO_ENV, env_file_encoding='utf-8') #'utf-8' asegura que no existan errores por caracteres extraños
     
 
-settings = ConfHorarios()
+settings = ConfiguracionInicial()
 
 
 
