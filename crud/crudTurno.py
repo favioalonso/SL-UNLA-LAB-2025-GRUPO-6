@@ -434,9 +434,6 @@ def get_turnos_cancelados_mes_actual(db: Session):
         .all()
     )
     
-    if not resultados:
-        return None
-    
     turnos_por_dia = []#creo una lista que tendra todos los turnos cancelados. Contiene sublistas con turnos de un mismo dia
     for fila in resultados:
         dia = fila.dia
@@ -481,7 +478,3 @@ def get_turnos_cancelados_mes_actual(db: Session):
         "cantidad": total_turnos_cancelados,
         "detalle_por_dia": turnos_por_dia
     } #genero el cuerpo de respuesta final, con una lista de turnos por dia que contiene la sublista con los detalles de cada turno
-
-
-
-
