@@ -15,9 +15,15 @@ USO DEL ARCHIVO DE VARIABLES DE ENTORNO .ENV
 - Para acceder a la lista del rango horario -> schemasTurnos.settings.horarios_turnos
 - Para acceder a la lista de estados posibles de un turno -> schemasTurnos.settings.estados_turnos
 
+USO DE VARIABLE DE ESTADOS
+
+- Se trabaja con un diccionario con pares clave valor
+diccionario_estados = schemasTurnos.settings.estados_posibles 
+
+- Se accede a un estado a traves de su clave (no de su valor)
+estado_requerido = diccionario_estados.get('OPCION_ESTADO_XXXXX')
+
 """
-
-
 
 #Funciones para validad los atributos del cuerpo de entrada de datos
 def validar_fecha_hora(turno: schemasTurno.TurnoCreate):
@@ -101,11 +107,13 @@ def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
         existente_no_cancelado = (
             db.query(models.Turno).filter(models.Turno.fecha == turno.fecha, 
                                           func.strftime('%H:%M', models.Turno.hora) == turno.hora.strftime('%H:%M'),
-                                          models.Turno.estado != "Cancelado").first())#Si el estado es cancelado no lo tiene en cuenta      
+                                          models.Turno.estado != "Cancelado").first())#Si el estado es cancelado no lo tiene en cuenta
         if existente_no_cancelado:
             raise ValueError("El horario solicitado ya está reservado por otro paciente.")
- 
-        nuevo_turno = models.Turno(**turno.dict())
+
+        # Corrección: Cambio de .dict() (deprecado en Pydantic v2) a .model_dump()
+        # Esto previene warnings y asegura compatibilidad con futuras versiones de Pydantic
+        nuevo_turno = models.Turno(**turno.model_dump())
         nuevo_turno.estado = "Pendiente"
         db.add(nuevo_turno)
         db.commit()
@@ -167,11 +175,16 @@ def get_turnos_disponibles(fecha: date, db: Session):
     hoy = datetime.today()
     if fecha < hoy.date():
         raise Exception("La fecha no puede ser anterior al día de hoy")
-    franja_horaria = copy(schemasTurno.settings.horarios_turnos)   
-    turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(and_(models.Turno.fecha == fecha, or_(models.Turno.estado == "Pendiente", models.Turno.estado == "Confirmado"))).all()]
+    
+    #Variables para validacion de estado y fecha
+    franja_horaria = copy(schemasTurno.settings.horarios_turnos) #Acceder a lista de horarios de atencion del .env
+    estados_turnos = schemasTurno.settings.estados_posibles #Acceder al diccionario de estados del .env    
+    
+    turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(and_(models.Turno.fecha == fecha, or_(models.Turno.estado == estados_turnos.get('ESTADO_ASISTIDO'), models.Turno.estado == estados_turnos.get('ESTADO_CONFIRMADO')))).all()]
     for reservado in turnos_reservados:
         if reservado in franja_horaria:
             franja_horaria.remove(reservado)
+
     #Define el rango horario
     hora_inicio = time(hour=9, minute=0)
     hora_fin =  time(hour=16,minute=30)
@@ -373,6 +386,7 @@ def get_personas_turnos_cancelados(db: Session, min_cancelados: int):
 
         })
 
+
     return lista_cancelados #retornamos
 
 def get_turnos_por_fecha(db: Session, fecha: date):
@@ -465,4 +479,6 @@ def get_turnos_cancelados_mes_actual(db: Session):
         "cantidad": total_turnos_cancelados,
         "detalle_por_dia": turnos_por_dia
     } #genero el cuerpo de respuesta final, con una lista de turnos por dia que contiene la sublista con los detalles de cada turno
+
+
 
