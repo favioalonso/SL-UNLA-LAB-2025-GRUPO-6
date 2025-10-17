@@ -61,11 +61,11 @@ def turno_diccionario(nuevo_turno: models.Turno, persona: models.Persona):
 #Regla de negocio, habilita a las personas si ya paso el tiempo de deshabilitacion y deshabilita segun regla de turnos cancelados
 def habilitar_persona(db: Session, turno: schemasTurno.TurnoCreate, persona: models.Persona):
 
-    seisMesesAtras = date.today() - timedelta(days=180)
-    cantCancelados = db.query(models.Turno).filter(models.Turno.persona_id == turno.persona_id, 
-                                                   models.Turno.estado == "Cancelado", 
-                                                   models.Turno.fecha >= seisMesesAtras).count()
-    if (cantCancelados >= 5):
+    seis_meses_atras = date.today() - timedelta(days=180)
+    cant_cancelados = db.query(models.Turno).filter(models.Turno.persona_id == turno.persona_id, 
+                                                   models.Turno.estado == "Cancelado",
+                                                   models.Turno.fecha >= seis_meses_atras).count()
+    if (cant_cancelados >= 5):
         persona.habilitado = False
         db.commit()
         db.refresh(persona)
@@ -101,12 +101,12 @@ def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
         existente_no_cancelado = (
             db.query(models.Turno).filter(models.Turno.fecha == turno.fecha, 
                                           func.strftime('%H:%M', models.Turno.hora) == turno.hora.strftime('%H:%M'),
-                                          models.Turno.estado != "Cancelado").first())#Si el estado es cancelado no lo tiene en cuenta
+                                          models.Turno.estado != "Cancelado").first())#Si el estado es cancelado no lo tiene en cuenta      
         if existente_no_cancelado:
             raise ValueError("El horario solicitado ya está reservado por otro paciente.")
  
         nuevo_turno = models.Turno(**turno.dict())
-
+        nuevo_turno.estado = "Pendiente"
         db.add(nuevo_turno)
         db.commit()
         db.refresh(nuevo_turno)
@@ -393,46 +393,46 @@ def get_turnos_por_fecha(db: Session, fecha: date):
                 "nombre": turno.persona.nombre,
                 "dni": turno.persona.dni
             }
-        })
+        })#Devuelve una lista de diccionarios con los datos solicitados
 
     return turnos_lista
 
 def get_turnos_cancelados_mes_actual(db: Session):
 
-    hoy = datetime.now()
+    hoy = datetime.now()#obtiene la fecha actual para obtener el mes actual y el año, de esa manera filtra los resultados
     anio_actual = hoy.year
     mes_actual = hoy.month
  
     resultados = (
         db.query(
             func.date(models.Turno.fecha).label("dia"),
-            func.count(models.Turno.id).label("cantidad")
-        )
+            func.count(models.Turno.id).label("cantidad")#Cuando se realiza la agrupacion de los resultados se generan estos dos atributos
+        )                                                #que van a indicar el dia por el que se agrupo y la cantidad de turnos cancelados que hubo   
         .filter(
             func.strftime("%Y", models.Turno.fecha) == str(anio_actual),
-            func.strftime("%m", models.Turno.fecha) == f"{mes_actual:02d}",
+            func.strftime("%m", models.Turno.fecha) == f"{mes_actual:02d}",#filtra los turnos transformando el formato de datetime a string para poder compararlos
             func.lower(models.Turno.estado) == "cancelado"
         )
-        .group_by(func.date(models.Turno.fecha))
-        .order_by(func.date(models.Turno.fecha))
+        .group_by(func.date(models.Turno.fecha))#agrupa por dia, donde haya turnos cancelados, los resultados me van a devolver la cantidad y la fecha
+        .order_by(func.date(models.Turno.fecha))#ordena los resultados segun la fecha
         .all()
     )
     
     if not resultados:
         return None
     
-    turnos_por_dia = []
+    turnos_por_dia = []#creo una lista que tendra todos los turnos cancelados. Contiene sublistas con turnos de un mismo dia
     for fila in resultados:
         dia = fila.dia
-        cantidad = fila.cantidad
+        cantidad = fila.cantidad #es la informacion que tendra cada sub lista de turnos en un mismo dia, la fecha y la cantidad
 
         turnos_dia = (
             db.query(models.Turno)
             .filter(
                 func.date(models.Turno.fecha) == dia,
                 func.lower(models.Turno.estado) == "cancelado"
-            ).all()
-        )
+            ).all() #para cada resultado del group_by por dia, busco los turnos que corresponden a cada uno de esos resultados para generar las sublistas con su informacion
+        ) 
 
         turnos_detalle = [
             {
@@ -442,14 +442,14 @@ def get_turnos_cancelados_mes_actual(db: Session):
                 "hora": turno.hora.strftime("%H:%M"),
                 "estado": turno.estado
             }
-            for turno in turnos_dia
+            for turno in turnos_dia #una vez que tengo los turnos que corresponden a esa fila del resultado, reformo los datos para que se muestren facilmente
         ]
         
         turnos_por_dia.append({
             "fecha": dia,
             "cantidad_cancelados": cantidad,
             "turnos": turnos_detalle
-        })
+        }) #por cada dia muestro sus datos (fecha y cantidad de turnos cancelados) y devuelvo la sublista formada con los datos del turno
         
     meses= [
         "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -464,5 +464,5 @@ def get_turnos_cancelados_mes_actual(db: Session):
         "mes": mes_nombre,
         "cantidad": total_turnos_cancelados,
         "detalle_por_dia": turnos_por_dia
-    }
+    } #genero el cuerpo de respuesta final, con una lista de turnos por dia que contiene la sublista con los detalles de cada turno
 

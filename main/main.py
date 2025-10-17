@@ -340,12 +340,11 @@ def get_turnos_por_fecha(
     ), db: Session = Depends(get_db)):
 
     try:
-        fecha_valida = datetime.strptime(fecha, "%Y-%m-%d").date()
+        fecha_valida = datetime.strptime(fecha, "%Y-%m-%d").date()#Paso el formato de string de la fecha de entrada a tipo datetime
+                                                                  #y si el formato no es correcto me genera un ValueError  
         turnos = crudTurno.get_turnos_por_fecha(db, fecha_valida)
         if not turnos:
-            raise HTTPException(
-                status_code=status.HTTP_204_NO_CONTENT,
-            )
+            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT)
         return {"fecha": fecha, "turnos": turnos}
     except ValueError:
         raise HTTPException(
