@@ -24,6 +24,8 @@ diccionario_estados = schemasTurnos.settings.estados_posibles
 estado_requerido = diccionario_estados.get('OPCION_ESTADO_XXXXX')
 
 """
+#Se le asignan los valores a la variable diccionario_estados para que sean utilizados en los endpoints correspondientes
+diccionario_estados = settings.estados_posibles
 
 #Funciones para validad los atributos del cuerpo de entrada de datos
 def validar_fecha_hora(turno: schemasTurno.TurnoCreate):
@@ -69,7 +71,7 @@ def habilitar_persona(db: Session, turno: schemasTurno.TurnoCreate, persona: mod
 
     seis_meses_atras = date.today() - timedelta(days=180)
     cant_cancelados = db.query(models.Turno).filter(models.Turno.persona_id == turno.persona_id, 
-                                                   models.Turno.estado == "Cancelado",
+                                                   func.lower(models.Turno.estado) == diccionario_estados.get('ESTADO_CANCELADO').lower(),
                                                    models.Turno.fecha >= seis_meses_atras).count()
     if (cant_cancelados >= 5):
         persona.habilitado = False
@@ -107,14 +109,14 @@ def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
         existente_no_cancelado = (
             db.query(models.Turno).filter(models.Turno.fecha == turno.fecha, 
                                           func.strftime('%H:%M', models.Turno.hora) == turno.hora.strftime('%H:%M'),
-                                          models.Turno.estado != "Cancelado").first())#Si el estado es cancelado no lo tiene en cuenta
+                                          func.lower(models.Turno.estado) != diccionario_estados.get('ESTADO_CANCELADO').lower()).first())#Si el estado es cancelado no lo tiene en cuenta
         if existente_no_cancelado:
             raise ValueError("El horario solicitado ya está reservado por otro paciente.")
 
         # Corrección: Cambio de .dict() (deprecado en Pydantic v2) a .model_dump()
         # Esto previene warnings y asegura compatibilidad con futuras versiones de Pydantic
         nuevo_turno = models.Turno(**turno.model_dump())
-        nuevo_turno.estado = "Pendiente"
+        nuevo_turno.estado = diccionario_estados.get('ESTADO_PENDIENTE')
         db.add(nuevo_turno)
         db.commit()
         db.refresh(nuevo_turno)
@@ -425,7 +427,7 @@ def get_turnos_cancelados_mes_actual(db: Session):
         .filter(
             func.strftime("%Y", models.Turno.fecha) == str(anio_actual),
             func.strftime("%m", models.Turno.fecha) == f"{mes_actual:02d}",#filtra los turnos transformando el formato de datetime a string para poder compararlos
-            func.lower(models.Turno.estado) == "cancelado"
+            func.lower(models.Turno.estado) == diccionario_estados.get('ESTADO_CANCELADO').lower()
         )
         .group_by(func.date(models.Turno.fecha))#agrupa por dia, donde haya turnos cancelados, los resultados me van a devolver la cantidad y la fecha
         .order_by(func.date(models.Turno.fecha))#ordena los resultados segun la fecha
@@ -444,7 +446,7 @@ def get_turnos_cancelados_mes_actual(db: Session):
             db.query(models.Turno)
             .filter(
                 func.date(models.Turno.fecha) == dia,
-                func.lower(models.Turno.estado) == "cancelado"
+                func.lower(models.Turno.estado) == diccionario_estados.get('ESTADO_CANCELADO').lower()
             ).all() #para cada resultado del group_by por dia, busco los turnos que corresponden a cada uno de esos resultados para generar las sublistas con su informacion
         ) 
 
@@ -479,6 +481,7 @@ def get_turnos_cancelados_mes_actual(db: Session):
         "cantidad": total_turnos_cancelados,
         "detalle_por_dia": turnos_por_dia
     } #genero el cuerpo de respuesta final, con una lista de turnos por dia que contiene la sublista con los detalles de cada turno
+
 
 
 
