@@ -20,7 +20,7 @@ class Turno(Base):
     id = Column(Integer, primary_key=True, index=True)
     fecha = Column(Date, nullable=False)
     hora = Column(Time, nullable=False)
-    estado = Column(String, default= "Pendiente")
+    estado = Column(String, nullable=False)
 
     persona_id = Column(Integer, ForeignKey("personas.id"), nullable=False)
 
