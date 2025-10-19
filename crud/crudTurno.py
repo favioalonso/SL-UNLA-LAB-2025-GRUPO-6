@@ -139,9 +139,13 @@ def get_turnos(db: Session, skip: int, limit: int):
         return turnos_lista
     except Exception as e:
         raise Exception(f"Error al consultar turnos: {e}")
-#Funcion para eliminar turno por id
-def delete_turno(turno_id: int, db: Session):
+    
 
+def delete_turno(turno_id: int, db: Session):
+    """
+        Eliminación física del turno
+        El registro se elimina de la base de datos
+    """
     try:
         turno_eliminar = db.query(models.Turno).filter(models.Turno.id == turno_id).first()
         if turno_eliminar:
@@ -154,14 +158,19 @@ def delete_turno(turno_id: int, db: Session):
             return True #exito
         return False
     except ValueError:
-        # Re-lanzar ValueError para que sea manejado por el endpoint
+        # Relanza ValueError para que sea manejado por el endpoint
         raise
     except Exception as e:
         db.rollback() #No se modifica la base de datos
         raise e
 
-#Funcion para sumar 30 minutos a una hora:time
+
 def siguiente_hora(hora_actual:time):
+
+    """
+        Solicita una hora(time)
+        Retorna una hora(time) posterior agregando 30 minutos
+    """
 
     #Para usar timedelta es necesario trabajar con un dato datetime
     fecha = datetime.today()
@@ -171,8 +180,13 @@ def siguiente_hora(hora_actual:time):
     nueva_hora_datetime = objeto_hora + timedelta(minutes=30)
     return nueva_hora_datetime.time()
 
-#Funcion para mostrar turnos disponibles por fecha ingresada
+
 def get_turnos_disponibles(fecha: date, db: Session):
+    """
+        Solicita una fecha(date)
+        Retorna una lista de turnos disponibles en esa fecha(date)
+    """
+
     #Validacion por fecha (No se pueden ver los turnos de dias anteriores a hoy)
     hoy = datetime.today()
     if fecha < hoy.date():
@@ -481,6 +495,12 @@ def get_turnos_cancelados_mes_actual(db: Session):
 
 def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int = 0, limit: int = 100):
 
+    """
+    Solicita una fecha de inicio y fin de la consulta
+    Retorna una lista de turnos con estado "confirmado" entre esas fechas inclusive
+    Se aplica una paginación fija con límite 5 páginas
+    """
+
     if fecha_hasta < fecha_desde:
         raise ValueError("La fecha inicial a consultar no puede ser posterior a la fecha final a consultar")
     
@@ -493,8 +513,8 @@ def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int =
             models.Turno.estado == diccionario_estados.get('ESTADO_CONFIRMADO')
         )
     )
-    total_registros = consulta_turnos.count()
-    turnos_filtrados = consulta_turnos.offset(skip).limit(limit).all()
+    total_registros = consulta_turnos.count() #Cuenta la cantidad de turnos confirmados
+    turnos_filtrados = consulta_turnos.offset(skip).limit(limit).all() #Aplica paginación
 
     #Convertimos a diccionario para el response model
     turnos_confirmados = []
@@ -504,3 +524,4 @@ def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int =
         "total_registros": total_registros,
         "turnos": turnos_confirmados
     }
+

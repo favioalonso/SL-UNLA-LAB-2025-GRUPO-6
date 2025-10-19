@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import Optional, List
+from typing import Optional
 from datetime import date, datetime
 
 
@@ -375,3 +375,15 @@ def get_reporte_turnos_confirmados_por_fecha(fecha_desde: date, fecha_hasta: dat
     
     except Exception as excepcion:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {excepcion}")
+#GET /reportes/estado-personas?habilitada=true/false
+@app.get("/reportes/estado-personas/{estado}", response_model=list[schemas.PersonaOut])
+def get_reporte_personas_por_estado(estado: schemas.Booleano_Estado, db: Session = Depends(get_db)):
+    try:
+        reporte_estado_personas = crud.get_personas_habilitadas_o_deshabilitadas(estado, db)
+        if not reporte_estado_personas:
+            raise HTTPException(status_code=404, detail=f"No existen personas con el estado {estado.value}")
+        return reporte_estado_personas
+    
+    except Exception as excepcion:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {excepcion}")
+    

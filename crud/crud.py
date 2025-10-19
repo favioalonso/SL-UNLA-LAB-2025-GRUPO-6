@@ -197,3 +197,28 @@ def get_personas_filtered(
         raise Exception(f"Error al consultar personas filtradas: {e}")
     except ValueError as e:
         raise Exception(f"Error en filtros de búsqueda: {e}")
+
+def get_personas_habilitadas_o_deshabilitadas(estado: schemas.Booleano_Estado, db: Session):
+    """
+        Consulta a las personas según el estado (enum): "habilitado" o "deshabilitado"
+        Retorna las personas que tienen el estado elegido
+    """
+    #Convierte el enum a un booleano
+    if estado == schemas.Booleano_Estado.TRUE:
+        habilitado = True
+    else: 
+        habilitado = False
+
+    #Consulta filtrada por estado
+    personas = db.query(models.Persona).filter(
+        models.Persona.habilitado == habilitado
+    ).all()
+
+     # Convertir a schemas con edad calculada
+    personas_filtradas = []
+    for persona in personas:
+        persona_dict = persona.__dict__.copy()
+        persona_dict['edad'] = calcular_edad(persona.fecha_nacimiento)
+        personas_filtradas.append(schemas.PersonaOut(**persona_dict))
+
+    return personas_filtradas

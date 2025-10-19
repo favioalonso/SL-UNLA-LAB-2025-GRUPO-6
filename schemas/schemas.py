@@ -2,6 +2,7 @@ from pydantic import BaseModel, field_validator, EmailStr
 import re
 from datetime import date
 from typing import Optional, List
+from enum import Enum
 
 class PersonaBase(BaseModel):
     nombre: str
@@ -113,3 +114,7 @@ class PaginationMetadata(BaseModel):
 class PaginatedPersonaResponse(BaseModel):
     items: List[PersonaOut]
     metadata: PaginationMetadata
+
+class Booleano_Estado(str, Enum):
+    TRUE = "habilitado"
+    FALSE = "deshabilitado" 
