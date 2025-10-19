@@ -179,10 +179,10 @@ def get_turnos_disponibles(fecha: date, db: Session):
         raise Exception("La fecha no puede ser anterior al día de hoy")
     
     #Variables para validacion de estado y fecha
-    franja_horaria = copy(schemasTurno.settings.horarios_turnos) #Acceder a lista de horarios de atencion del .env
-    estados_turnos = schemasTurno.settings.estados_posibles #Acceder al diccionario de estados del .env    
+    franja_horaria = copy(schemasTurno.settings.horarios_turnos) #Acceder a lista de horarios de atencion del .env #Acceder al diccionario de estados del .env    
     
-    turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(and_(models.Turno.fecha == fecha, or_(models.Turno.estado == estados_turnos.get('ESTADO_ASISTIDO'), models.Turno.estado == estados_turnos.get('ESTADO_CONFIRMADO')))).all()]
+    #Se filtran los turnos comparando con el .env cargado previamente
+    turnos_reservados = [turno.hora for turno in db.query(models.Turno.hora).filter(and_(models.Turno.fecha == fecha, or_(models.Turno.estado == diccionario_estados.get('ESTADO_ASISTIDO'), models.Turno.estado == diccionario_estados.get('ESTADO_CONFIRMADO')))).all()]
     for reservado in turnos_reservados:
         if reservado in franja_horaria:
             franja_horaria.remove(reservado)
@@ -478,3 +478,29 @@ def get_turnos_cancelados_mes_actual(db: Session):
         "cantidad": total_turnos_cancelados,
         "detalle_por_dia": turnos_por_dia
     } #genero el cuerpo de respuesta final, con una lista de turnos por dia que contiene la sublista con los detalles de cada turno
+
+def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int = 0, limit: int = 100):
+
+    if fecha_hasta < fecha_desde:
+        raise ValueError("La fecha inicial a consultar no puede ser posterior a la fecha final a consultar")
+    
+    consulta_turnos = (
+        db.query(models.Turno)
+        .options(joinedload(models.Turno.persona)) #Agregar la persona
+        .filter(
+            models.Turno.fecha >= fecha_desde, 
+            models.Turno.fecha <= fecha_hasta, 
+            models.Turno.estado == diccionario_estados.get('ESTADO_CONFIRMADO')
+        )
+    )
+    total_registros = consulta_turnos.count()
+    turnos_filtrados = consulta_turnos.offset(skip).limit(limit).all()
+
+    #Convertimos a diccionario para el response model
+    turnos_confirmados = []
+    for turno in turnos_filtrados:
+        turnos_confirmados.append(turno_diccionario(turno, turno.persona))
+    return {
+        "total_registros": total_registros,
+        "turnos": turnos_confirmados
+    }

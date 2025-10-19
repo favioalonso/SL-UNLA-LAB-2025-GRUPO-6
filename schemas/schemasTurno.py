@@ -48,6 +48,11 @@ class PersonaConTurnosCancelados(BaseModel):
     turnos_cancelados_contador: int
     turnos_cancelados_detalle: List[TurnoOut] #Lista de los turnos cancelados para mostrar el detalle
 
+#Estructura de paginación
+class RespuestaTurnosPaginados(BaseModel):
+    total_registros: int
+    turnos: List[TurnoOut]
+
 #Carga las variables del archivo .env
 load_dotenv()
 
@@ -87,3 +92,4 @@ class ConfiguracionInicial(BaseSettings):
         return diccionario_estados 
     
 settings = ConfiguracionInicial()
+
