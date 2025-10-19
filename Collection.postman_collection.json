@@ -515,13 +515,13 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/turnos/",
+							"raw": "{{base_url}}/turnos/1",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"turnos",
-								""
+								"1"
 							]
 						},
 						"description": "This is a DELETE request, and it is used to delete data that was previously created via a POST request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful DELETE request typically returns a `200 OK`, `202 Accepted`, or `204 No Content` response code."
@@ -540,7 +540,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/turnos/turnos-disponibles?fecha=",
+							"raw": "{{base_url}}/turnos/turnos-disponibles?fecha=2025-11-15",
 							"host": [
 								"{{base_url}}"
 							],
@@ -551,10 +551,228 @@
 							"query": [
 								{
 									"key": "fecha",
-									"value": ""
+									"value": "2025-11-15"
 								}
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar turno",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Successful PUT request\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/turnos/1/cancelar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"turnos",
+								"1",
+								"cancelar"
+							]
+						},
+						"description": "Cancela un turno cambiando su estado a 'Cancelado'. No se pueden cancelar turnos que ya fueron asistidos."
+					},
+					"response": []
+				},
+				{
+					"name": "Confirmar turno",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Successful PUT request\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/turnos/1/confirmar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"turnos",
+								"1",
+								"confirmar"
+							]
+						},
+						"description": "Confirma un turno cambiando su estado a 'Confirmado'. No se pueden confirmar turnos cancelados o asistidos."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reportes",
+			"item": [
+				{
+					"name": "Turnos por fecha",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/turnos-por-fecha?fecha=2025-09-25",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"turnos-por-fecha"
+							],
+							"query": [
+								{
+									"key": "fecha",
+									"value": "2025-09-25"
+								}
+							]
+						},
+						"description": "Devuelve todos los turnos de una fecha específica con información de la persona (nombre y DNI), sin discriminar por estado del turno."
+					},
+					"response": []
+				},
+				{
+					"name": "Turnos cancelados del mes actual",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/turnos-cancelados-por-mes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"turnos-cancelados-por-mes"
+							]
+						},
+						"description": "Devuelve un reporte de los turnos cancelados del mes actual, agrupados por día con información de la persona."
+					},
+					"response": []
+				},
+				{
+					"name": "Turnos por persona (DNI)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/turnos-por-persona?dni=12345678",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"turnos-por-persona"
+							],
+							"query": [
+								{
+									"key": "dni",
+									"value": "12345678"
+								}
+							]
+						},
+						"description": "Devuelve todos los turnos de una persona por su DNI, sin discriminar por estado del turno."
+					},
+					"response": []
+				},
+				{
+					"name": "Personas con 5+ turnos cancelados",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/turnos-cancelados?min=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"turnos-cancelados"
+							],
+							"query": [
+								{
+									"key": "min",
+									"value": "5"
+								}
+							]
+						},
+						"description": "Devuelve un arreglo con información de personas que tienen 5 o más turnos cancelados, indicando la cantidad y el detalle de los turnos cancelados."
+					},
+					"response": []
+				},
+				{
+					"name": "Turnos confirmados entre fechas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/turnos-confirmados?fecha_desde=2025-11-01&fecha_hasta=2025-11-30",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"turnos-confirmados"
+							],
+							"query": [
+								{
+									"key": "fecha_desde",
+									"value": "2025-11-01"
+								},
+								{
+									"key": "fecha_hasta",
+									"value": "2025-11-30"
+								}
+							]
+						},
+						"description": "Devuelve todos los turnos confirmados en un período de tiempo (desde-hasta, inclusive). Los resultados están paginados mostrando 5 registros por página."
+					},
+					"response": []
+				},
+				{
+					"name": "Personas por estado (habilitado/deshabilitado)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/estado-personas/habilitado",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"estado-personas",
+								"habilitado"
+							]
+						},
+						"description": "Devuelve la lista de personas filtradas por su estado de habilitación. Valores válidos: 'habilitado' o 'deshabilitado'."
 					},
 					"response": []
 				}

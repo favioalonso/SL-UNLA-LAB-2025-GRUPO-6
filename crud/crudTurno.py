@@ -150,7 +150,7 @@ def delete_turno(turno_id: int, db: Session):
         turno_eliminar = db.query(models.Turno).filter(models.Turno.id == turno_id).first()
         if turno_eliminar:
             # Validar que el turno no esté asistido
-            if turno_eliminar.estado.lower() == "asistido":
+            if turno_eliminar.estado.lower() == diccionario_estados.get('ESTADO_ASISTIDO').lower():
                 raise ValueError("No se puede eliminar un turno que ya fue asistido")
 
             db.delete(turno_eliminar)
@@ -234,16 +234,16 @@ def cancelar_turno(db: Session, turno_id: int):
         return None
 
     # Validar que el turno no esté ya asistido
-    if turno_db.estado.lower() == "asistido":
+    if turno_db.estado.lower() == diccionario_estados.get('ESTADO_ASISTIDO').lower():
         raise ValueError("No se puede cancelar un turno que ya fue asistido")
 
     # Validar que el turno no esté ya cancelado
-    if turno_db.estado.lower() == "cancelado":
+    if turno_db.estado.lower() == diccionario_estados.get('ESTADO_CANCELADO').lower():
         raise ValueError("El turno ya está cancelado")
 
     try:
         # Cambiar estado a cancelado
-        turno_db.estado = "Cancelado"
+        turno_db.estado = diccionario_estados.get('ESTADO_CANCELADO')
         db.commit()
         db.refresh(turno_db)
 
@@ -261,16 +261,16 @@ def confirmar_turno(db: Session, turno_id: int):
         return None
 
     # Validar que el turno no esté ya asistido
-    if turno_db.estado.lower() == "asistido":
+    if turno_db.estado.lower() == diccionario_estados.get('ESTADO_ASISTIDO').lower():
         raise ValueError("No se puede confirmar un turno que ya fue asistido")
 
     # Validar que el turno no esté cancelado
-    if turno_db.estado.lower() == "cancelado":
+    if turno_db.estado.lower() == diccionario_estados.get('ESTADO_CANCELADO').lower():
         raise ValueError("No se puede confirmar un turno cancelado")
 
     try:
         # Cambiar estado a confirmado
-        turno_db.estado = "Confirmado"
+        turno_db.estado = diccionario_estados.get('ESTADO_CONFIRMADO')
         db.commit()
         db.refresh(turno_db)
 
@@ -288,7 +288,7 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
        return None
 
    # Validar que el turno no esté asistido o cancelado antes de modificar
-   if turno_db.estado.lower() in ["asistido", "cancelado"]:
+   if turno_db.estado.lower() in [diccionario_estados.get('ESTADO_ASISTIDO').lower(), diccionario_estados.get('ESTADO_CANCELADO').lower()]:
        raise ValueError(f"No se puede modificar un turno {turno_db.estado.lower()}")
 
    #Si ingresa valores nuevos los cambia, pero si no lo hace quedan los mismos
@@ -365,7 +365,7 @@ def get_personas_turnos_cancelados(db: Session, min_cancelados: int):
 
     personas_estado_cancelado =(
     db.query(models.Persona, func.count(models.Turno.id).label("contador_de_turnos_cancelados")) #Trae a la persona, y un contador de sus turnos cancelados
-    .join(models.Turno, models.Persona.id == models.Turno.persona_id).filter (models.Turno.estado == "Cancelado")
+    .join(models.Turno, models.Persona.id == models.Turno.persona_id).filter(func.lower(models.Turno.estado) == diccionario_estados.get('ESTADO_CANCELADO').lower())
     #Uso join para unir a la persona con sus turnos mediante el persona_id y filtro los del estado "cancelado"
     .group_by(models.Persona.id) #Agrupamos por persona
     .having(func.count(models.Turno.id) >= min_cancelados).all()
@@ -380,7 +380,7 @@ def get_personas_turnos_cancelados(db: Session, min_cancelados: int):
             db.query(models.Turno).options(joinedload(models.Turno.persona))
             .filter(
                 models.Turno.persona_id == persona.id, #filtramos los turnos de la persona
-                models.Turno.estado == "Cancelado" #filtramos por estado cancelado
+                func.lower(models.Turno.estado) == diccionario_estados.get('ESTADO_CANCELADO').lower() #filtramos por estado cancelado
             )
             .all() #devolvemos el detalle de los turnos
         )
