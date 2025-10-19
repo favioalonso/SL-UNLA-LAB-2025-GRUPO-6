@@ -89,6 +89,20 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
 | `PUT` | `/turnos/{turno_id}` | Actualizar un turno | Gonzalo Liberatori |
 | `DELETE` | `/turnos/{turno_id}` | Eliminar un turno | Martina Martinez |
 | `GET` | `/turnos/turnos-disponibles` | Obtener horarios disponibles por fecha | Martina Martinez |
+| `PUT` | `/turnos/{id}/cancelar` | Cancelar turno por id | Favio Alonso |
+| `PUT` | `/turnos/{id}/confirmar` | Confirmar turno por id | Favio Alonso |
+
+### 📈 Reportes
+| Método | Endpoint | Descripción | Desarrollado por |
+|--------|----------|-------------|------------------|
+| `GET` | `/reportes/turnos-por-fecha?fecha=YYYY-MM-DD` | Reporte de turnos por fecha | Marcos Charadia |
+| `GET` | `/reportes/turnos-cancelados-por-mes` | Reporte de turnos cancelados por mes | Marcos Charadia |
+| `GET` | `/reportes/turnos-por-persona?dni=12345678`| Reporte de turnos por persona por dni | Gonzalo Liberatori |
+| `GET` | `/reportes/turnos-cancelados?min=5` | Reporte de turnos cancelados | Gonzalo Liberatori |
+| `GET` | `/reportes/turnos-cancelados?min=5` | Reporte de persona con min 5 turnos cancelados | Gonzalo Liberatori |
+| `GET` | `/reportes/turnos-confirmados?desde=YYYY-MM-DD&hasta=YYYY-MM-DD` | Reporte de turnos confirmados entre dos fechas | Martina Martinez |
+| `GET` | `/reportes/estado-personas?habilitada=true/false` | Reporte de personas segun estado | Martina Martinez |
+
 
 ## Funcionalidades del Sistema de Turnos
 
