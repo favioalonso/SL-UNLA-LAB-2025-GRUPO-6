@@ -2,8 +2,6 @@
 
 Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy para la gestión de personas y turnos. Permite crear, leer, actualizar y eliminar registros de personas y turnos en una base de datos SQLite con arquitectura modular y validaciones robustas.
 
-![Vista previa del CRUD](abm_personas2.gif)
-
 ## Características
 
 - **API RESTful completa** para operaciones CRUD sobre personas y turnos
@@ -178,9 +176,33 @@ GET /turnos/turnos-disponibles?fecha=2025-09-25
 
 ## Datos de Prueba
 
-La aplicación incluye datos de prueba que se crean automáticamente al iniciar:
-- 3 personas de ejemplo con diferentes perfiles
-- Datos realistas para probar todas las funcionalidades
+La aplicación incluye datos de prueba que se crean automáticamente al iniciar el servidor por primera vez. Estos datos permiten probar todas las funcionalidades del sistema sin necesidad de crearlos manualmente.
+
+### Personas (7 registros)
+- **6 personas habilitadas** con diferentes edades (25-46 años) y diversos proveedores de email
+- **1 persona deshabilitada** (Laura Fernández) con 6 turnos cancelados, demostrando el sistema de deshabilitación automática
+
+### Turnos (20 registros)
+Los turnos se distribuyen estratégicamente para probar todos los endpoints de reportes:
+
+- **5 Pendientes**: Para probar operaciones de confirmación y cancelación
+- **5 Confirmados**: Ubicados en noviembre 2025 (días 15-19) para probar reportes de turnos confirmados entre fechas con paginación
+- **7 Cancelados**: 6 pertenecientes a una misma persona (deshabilitación automática) y 1 adicional para variedad
+- **3 Asistidos**: Para validar restricciones (no se pueden modificar ni eliminar)
+
+### Escenarios de prueba cubiertos
+1. **Reportes por fecha**: Turnos distribuidos en septiembre, octubre y noviembre 2025
+2. **Reportes de cancelados del mes**: Múltiples turnos cancelados en meses recientes
+3. **Reportes por persona**: Cada persona tiene múltiples turnos en diferentes estados
+4. **Personas con 5+ turnos cancelados**: Laura Fernández cumple automáticamente esta condición
+5. **Reportes de confirmados entre fechas**: 5 turnos confirmados en un rango específico
+6. **Estado de personas**: Mix de habilitadas (6) y deshabilitadas (1)
+
+### Ventajas
+- ✅ No requiere creación manual de datos para testing
+- ✅ Todos los endpoints de reportes tienen datos para mostrar
+- ✅ Demuestra el funcionamiento de reglas de negocio (deshabilitación automática)
+- ✅ Datos realistas y variados para pruebas exhaustivas
 
 ## Manejo de Errores
 
