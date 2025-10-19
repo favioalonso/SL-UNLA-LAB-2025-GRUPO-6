@@ -174,35 +174,36 @@ GET /personas/search?nombre=Juan&edad_min=25&edad_max=50&page=1&per_page=10
 GET /turnos/turnos-disponibles?fecha=2025-09-25
 ```
 
-## Datos de Prueba
+## 📊 Datos de Prueba
 
-La aplicación incluye datos de prueba que se crean automáticamente al iniciar el servidor por primera vez. Estos datos permiten probar todas las funcionalidades del sistema sin necesidad de crearlos manualmente.
+La aplicación incluye **datos de prueba automáticos** que se crean al iniciar el servidor por primera vez, permitiendo probar todas las funcionalidades del sistema inmediatamente.
 
-### Personas (7 registros)
-- **6 personas habilitadas** con diferentes edades (25-46 años) y diversos proveedores de email
-- **1 persona deshabilitada** (Laura Fernández) con 6 turnos cancelados, demostrando el sistema de deshabilitación automática
+### 👥 Personas (7 registros)
 
-### Turnos (20 registros)
+| Estado | Cantidad | Descripción |
+|--------|----------|-------------|
+| ✅ Habilitadas | 6 | Edades entre 25-46 años, diversos proveedores de email |
+| ❌ Deshabilitadas | 1 | Laura Fernández (6 turnos cancelados) - demuestra deshabilitación automática |
+
+### 📅 Turnos (20 registros)
+
 Los turnos se distribuyen estratégicamente para probar todos los endpoints de reportes:
 
-- **5 Pendientes**: Para probar operaciones de confirmación y cancelación
-- **5 Confirmados**: Ubicados en noviembre 2025 (días 15-19) para probar reportes de turnos confirmados entre fechas con paginación
-- **7 Cancelados**: 6 pertenecientes a una misma persona (deshabilitación automática) y 1 adicional para variedad
-- **3 Asistidos**: Para validar restricciones (no se pueden modificar ni eliminar)
+| Estado | Cantidad | Propósito |
+|--------|----------|-----------|
+| 🟡 **Pendientes** | 5 | Operaciones de confirmación y cancelación |
+| 🟢 **Confirmados** | 5 | Reportes entre fechas (nov 15-19, 2025) con paginación |
+| 🔴 **Cancelados** | 7 | Reporte de personas con 5+ cancelados (6 de Laura + 1 de María) |
+| 🔵 **Asistidos** | 3 | Validación de restricciones (no modificables/eliminables) |
 
-### Escenarios de prueba cubiertos
-1. **Reportes por fecha**: Turnos distribuidos en septiembre, octubre y noviembre 2025
-2. **Reportes de cancelados del mes**: Múltiples turnos cancelados en meses recientes
-3. **Reportes por persona**: Cada persona tiene múltiples turnos en diferentes estados
-4. **Personas con 5+ turnos cancelados**: Laura Fernández cumple automáticamente esta condición
-5. **Reportes de confirmados entre fechas**: 5 turnos confirmados en un rango específico
-6. **Estado de personas**: Mix de habilitadas (6) y deshabilitadas (1)
+### ✨ Escenarios de Prueba Incluidos
 
-### Ventajas
-- ✅ No requiere creación manual de datos para testing
-- ✅ Todos los endpoints de reportes tienen datos para mostrar
-- ✅ Demuestra el funcionamiento de reglas de negocio (deshabilitación automática)
-- ✅ Datos realistas y variados para pruebas exhaustivas
+- 📆 **Reportes por fecha**: Turnos en septiembre, octubre y noviembre 2025
+- 📊 **Reportes de cancelados del mes**: Múltiples turnos en meses recientes
+- 👤 **Reportes por persona**: Cada persona con turnos en diferentes estados
+- ⚠️ **Personas con 5+ turnos cancelados**: Laura Fernández (condición automática)
+- 📈 **Reportes de confirmados entre fechas**: 5 turnos en rango específico
+- 🔄 **Estado de personas**: 6 habilitadas y 1 deshabilitada
 
 ## Manejo de Errores
 
