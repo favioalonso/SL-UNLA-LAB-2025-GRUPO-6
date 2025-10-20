@@ -365,3 +365,17 @@ def get_turnos_cancelados_mes_actual(db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al generar el reporte: {str(e)}"
         )
+
+@app.get("/reportes/turnos-confirmados", response_model=schemasTurno.RespuestaTurnosPaginados)
+def get_reporte_turnos_confirmados_por_fecha(fecha_desde: date, fecha_hasta: date, 
+                                             page: int = Query(1, ge=1, description="Número de página"),
+                                             per_page: int = Query(5, ge=1, le=100, description="Elementos por página"), 
+                                             db: Session = Depends(get_db)):
+    try:
+        reporte_confirmados = crudTurno.get_turnos_confirmados_desde_hasta(db, fecha_desde, fecha_hasta, page, per_page)
+        if reporte_confirmados["total_registros"] == 0:
+            raise HTTPException(status_code=404, detail=f"No hay turnos confirmados desde {fecha_desde} hasta {fecha_hasta}")
+        return reporte_confirmados
+    
+    except Exception as excepcion:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {excepcion}")
