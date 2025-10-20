@@ -483,5 +483,42 @@ def get_turnos_cancelados_mes_actual(db: Session):
     } #genero el cuerpo de respuesta final, con una lista de turnos por dia que contiene la sublista con los detalles de cada turno
 
 
+def get_turnos_confirmados_desde_hasta(db: Session, fecha_desde, fecha_hasta, page: int = 1,
+    per_page: int = 5):
+
+    """
+    Solicita una fecha de inicio y fin de la consulta
+    Retorna una lista de turnos con estado "confirmado" entre esas fechas inclusive
+    Se aplica una paginación fija con límite 5 páginas
+    """
+    # Aplicar paginación
+    offset = (page - 1) * per_page
+
+    if fecha_hasta < fecha_desde:
+        raise ValueError("La fecha inicial a consultar no puede ser posterior a la fecha final a consultar")
+    
+    consulta_turnos = (
+        db.query(models.Turno)
+        .options(joinedload(models.Turno.persona)) #Agregar la persona
+        .filter(
+            models.Turno.fecha >= fecha_desde, 
+            models.Turno.fecha <= fecha_hasta, 
+            models.Turno.estado == diccionario_estados.get('ESTADO_CONFIRMADO')
+        )
+    )
+    total_registros = consulta_turnos.count() #Cuenta la cantidad de turnos confirmados
+    turnos_filtrados = consulta_turnos.offset(offset).limit(per_page).all() #Aplica paginación
+
+    #Convertimos a diccionario para el response model
+    turnos_confirmados = []
+    for turno in turnos_filtrados:
+        turnos_confirmados.append(turno_diccionario(turno, turno.persona))
+    return {
+        "total_registros": total_registros,
+        "turnos": turnos_confirmados
+    }
+
+
+
 
 
