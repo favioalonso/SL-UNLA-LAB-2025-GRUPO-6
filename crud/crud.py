@@ -3,11 +3,11 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy import func, desc, asc
 import models.models as models, schemas.schemas as schemas
 import math
+from datetime import date
 
 
 def calcular_edad(fecha_nacimiento):
     try:
-        from datetime import date
         if not fecha_nacimiento:
             raise ValueError("Fecha de nacimiento no puede ser None")
         hoy = date.today()
@@ -131,7 +131,6 @@ def get_personas_filtered(
 
         # Filtros por edad (requiere cálculo)
         if filters.edad_min is not None or filters.edad_max is not None:
-            from datetime import date
             today = date.today()
 
             if filters.edad_min is not None:

@@ -339,36 +339,39 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
        raise e
 
 
-#Funcion para el reporte de turnos por dni
+#Funcion para el reporte de turnos por dni (optimizada - sin redundancia de datos de persona)
 def get_turnos_por_dni(db: Session, dni: str):
-    
+
     #Filtra a la persona por dni
     persona = db.query(models.Persona).filter(models.Persona.dni == dni).first()
     if not persona:
         return None #Si no la encuentra devuelve None
-    
-    #Buscar todos los turnos de la persona
-    #joinedload sirve para optimizar la instruccion, en vez de consultar por cada turno para que traiga los datos, los trae a todos en un solo llamado
-    turnos_db = db.query(models.Turno).options(joinedload(models.Turno.persona)).filter(models.Turno.persona_id == persona.id).all()
 
-    persona_estructurada = schemas.PersonaOut(
-        **persona.__dict__, #obtiene los datos de la persona y ** esto hace que los separe para que schemas de personasOut tome lo que necesita
-        edad= calcular_edad(persona.fecha_nacimiento)
+    #Buscar todos los turnos de la persona
+    turnos_db = db.query(models.Turno).filter(models.Turno.persona_id == persona.id).all()
+
+    #Estructura optimizada: persona una vez, turnos sin redundancia
+    persona_out = schemas.PersonaOut(
+        **persona.__dict__,
+        edad=calcular_edad(persona.fecha_nacimiento)
     )
 
-    turnos_simplificados = [
-            {
-                "id": turno.id,
-                "fecha": turno.fecha,
-                "hora": turno.hora,
-                "estado": turno.estado
-            }
-            for turno in turnos_db
+    turnos_sin_persona = [
+        {
+            "id": turno.id,
+            "fecha": turno.fecha,
+            "hora": turno.hora,
+            "estado": turno.estado
+        }
+        for turno in turnos_db
     ]
-    return{
-        "persona": persona_estructurada,
-        "turnos": turnos_simplificados
+
+    return {
+        "persona": persona_out,
+        "turnos": turnos_sin_persona,
+        "total_turnos": len(turnos_sin_persona)
     }
+
 
 #Funcion del reporte de turnos cancelados (minimo 5)
 
@@ -396,13 +399,13 @@ def get_personas_turnos_cancelados(db: Session, min_cancelados: int):
             .all() #devolvemos el detalle de los turnos
         )
 
-        #Le damos una estructura limpia a los datos con turno_diccionario
-        turnos_limpios =[
+        #Estructura optimizada: turnos sin datos redundantes de persona
+        turnos_limpios = [
             {
                 "id": turno.id,
-                "fecha":turno.fecha,
+                "fecha": turno.fecha,
                 "hora": turno.hora,
-                "estado":turno.estado
+                "estado": turno.estado
             }
             for turno in turnos_cancelados_detalle
         ]
@@ -412,12 +415,12 @@ def get_personas_turnos_cancelados(db: Session, min_cancelados: int):
             **persona.__dict__, #obtiene los datos de la persona y ** esto hace que los separe para que schemas de personasOut tome lo que necesita
             edad= calcular_edad(persona.fecha_nacimiento)
         )
-        
+
         #creamos el diccionario para una estructura clara
         lista_cancelados.append({
             "persona": persona_estructurada, #tomamos los datos limpios de personas
             "turnos_cancelados_contador": count, #sumamos el contador con el nombre que tiene en el schema
-            "turnos_cancelados_detalle": turnos_limpios, #sumamos los detalles de los turnos cancelados
+            "turnos_cancelados_detalle": turnos_limpios, #sumamos los detalles de los turnos cancelados (sin redundancia)
 
         })
 
@@ -425,27 +428,37 @@ def get_personas_turnos_cancelados(db: Session, min_cancelados: int):
     return lista_cancelados #retornamos
 
 def get_turnos_por_fecha(db: Session, fecha: date):
-    try: 
+    """
+    Obtiene turnos por fecha agrupados por persona (optimizado)
+    Si una persona tiene múltiples turnos el mismo día, se muestra una sola vez con sus turnos
+    """
+    try:
         turnos = (
             db.query(models.Turno).options(joinedload(models.Turno.persona))
             .filter(models.Turno.fecha == fecha)
             .all()
         )
 
-        turnos_lista = []
+        #Agrupar turnos por persona para evitar redundancia
+        personas_dict = {}
         for turno in turnos:
-            turnos_lista.append({
-                "id": turno.id,
-                "fecha": turno.fecha,
-                "hora": turno.hora.strftime("%H:%M"),
-                "estado": turno.estado,
-                "persona": {
-                    "nombre": turno.persona.nombre,
-                    "dni": turno.persona.dni
+            persona_id = turno.persona_id
+            if persona_id not in personas_dict:
+                personas_dict[persona_id] = {
+                    "persona": {
+                        "id": turno.persona.id,
+                        "nombre": turno.persona.nombre,
+                        "dni": turno.persona.dni
+                    },
+                    "turnos": []
                 }
-            })#Devuelve una lista de diccionarios con los datos solicitados
+            personas_dict[persona_id]["turnos"].append({
+                "id": turno.id,
+                "hora": turno.hora.strftime("%H:%M"),
+                "estado": turno.estado
+            })
 
-        return turnos_lista
+        return list(personas_dict.values())
     except SQLAlchemyError as e:
         raise Exception(f"Error de base de datos al consultar turnos por fecha: {e}")
     except Exception as e:
@@ -517,39 +530,50 @@ def get_turnos_cancelados_mes_actual(db: Session):
     except Exception as e:
         raise Exception(f"Error inesperado al generar el reporte de turnos cancelados: {e}")
 
-def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, pag=1, por_pag=5):
+def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int = 0, limit: int = 100):
 
     """
     Solicita una fecha de inicio y fin de la consulta
-    Retorna una lista de turnos con estado "confirmado" entre esas fechas inclusive
-    Se aplica una paginación fija con límite 5 registros por página
+    Retorna una lista de turnos con estado "confirmado" entre esas fechas inclusive, agrupados por persona
+    Se aplica una paginación fija con límite 5 páginas
     """
 
     if fecha_hasta < fecha_desde:
         raise ValueError("La fecha inicial a consultar no puede ser posterior a la fecha final a consultar")
-    
-    offset = (pag - 1) * por_pag #Indica cuantos registros "saltar" para mostrar sólo los que corresponden a esa página
-    
+
     consulta_turnos = (
         db.query(models.Turno)
         .options(joinedload(models.Turno.persona)) #Agregar la persona
         .filter(
-            models.Turno.fecha >= fecha_desde, 
-            models.Turno.fecha <= fecha_hasta, 
+            models.Turno.fecha >= fecha_desde,
+            models.Turno.fecha <= fecha_hasta,
             models.Turno.estado == diccionario_estados.get('ESTADO_CONFIRMADO')
         )
     )
     total_registros = consulta_turnos.count() #Cuenta la cantidad de turnos confirmados
-    turnos_filtrados = consulta_turnos.offset(offset).limit(por_pag).all() #Aplica paginación
+    turnos_filtrados = consulta_turnos.offset(skip).limit(limit).all() #Aplica paginación
 
-    #Convertimos a diccionario para el response model
-    turnos_confirmados = []
+    #Agrupar por persona para evitar redundancia
+    personas_dict = {}
     for turno in turnos_filtrados:
-        turnos_confirmados.append(turno_diccionario(turno, turno.persona))
-  
+        persona_id = turno.persona_id
+        if persona_id not in personas_dict:
+            personas_dict[persona_id] = {
+                "persona": schemas.PersonaOut(
+                    **turno.persona.__dict__,
+                    edad=calcular_edad(turno.persona.fecha_nacimiento)
+                ),
+                "turnos": []
+            }
+        personas_dict[persona_id]["turnos"].append({
+            "id": turno.id,
+            "fecha": turno.fecha,
+            "hora": turno.hora,
+            "estado": turno.estado
+        })
+
     return {
-             "total_registros": total_registros,
-            "turnos": turnos_confirmados,
-            "pagina": pag
-        }
+        "total_registros": total_registros,
+        "personas_con_turnos": list(personas_dict.values())
+    }
 

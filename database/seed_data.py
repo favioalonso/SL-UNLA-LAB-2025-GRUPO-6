@@ -97,23 +97,61 @@ def create_sample_data():
         db.commit()
         db.refresh(personas_creadas[0])  # Refrescar para obtener IDs
 
-        # Datos de prueba - Turnos
+        # Datos de prueba - Turnos (ampliados con casos de múltiples turnos mismo día)
         sample_turnos = [
-            # Turnos Pendientes
+            # ===== CASOS DE MÚLTIPLES TURNOS EL MISMO DÍA =====
+            # Juan Pérez (persona_id 1) - 2 turnos el 2025-11-22
+            {"persona_id": 1, "fecha": "2025-11-22", "hora": "09:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 1, "fecha": "2025-11-22", "hora": "14:30:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+
+            # María García (persona_id 2) - 2 turnos el 2025-11-23
+            {"persona_id": 2, "fecha": "2025-11-23", "hora": "10:00:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
+            {"persona_id": 2, "fecha": "2025-11-23", "hora": "15:00:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
+
+            # Carlos Rodriguez (persona_id 3) - 2 turnos el 2025-11-24
+            {"persona_id": 3, "fecha": "2025-11-24", "hora": "11:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 3, "fecha": "2025-11-24", "hora": "16:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+
+            # ===== JUAN PÉREZ (persona_id 1) - Múltiples turnos en diferentes fechas =====
             {"persona_id": 1, "fecha": "2025-09-25", "hora": "10:00:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
             {"persona_id": 1, "fecha": "2025-09-26", "hora": "11:00:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
-            {"persona_id": 2, "fecha": "2025-09-19", "hora": "15:30:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
-            {"persona_id": 3, "fecha": "2025-11-20", "hora": "09:30:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
-            {"persona_id": 4, "fecha": "2025-11-21", "hora": "14:00:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
-
-            # Turnos Confirmados
+            {"persona_id": 1, "fecha": "2025-10-15", "hora": "09:30:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 1, "fecha": "2025-11-05", "hora": "13:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
             {"persona_id": 1, "fecha": "2025-11-15", "hora": "14:30:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
-            {"persona_id": 2, "fecha": "2025-11-16", "hora": "10:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
-            {"persona_id": 3, "fecha": "2025-11-17", "hora": "11:30:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
-            {"persona_id": 4, "fecha": "2025-11-18", "hora": "15:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
-            {"persona_id": 5, "fecha": "2025-11-19", "hora": "09:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 1, "fecha": "2025-12-10", "hora": "10:30:00", "estado": diccionario_estados.get('ESTADO_ASISTIDO')},
+            {"persona_id": 1, "fecha": "2025-12-20", "hora": "15:30:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
 
-            # Turnos Cancelados (6 para Laura Fernández - persona_id 6)
+            # ===== MARÍA GARCÍA (persona_id 2) - Múltiples turnos =====
+            {"persona_id": 2, "fecha": "2025-09-19", "hora": "15:30:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
+            {"persona_id": 2, "fecha": "2025-10-12", "hora": "11:30:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 2, "fecha": "2025-11-16", "hora": "10:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 2, "fecha": "2025-12-05", "hora": "14:00:00", "estado": diccionario_estados.get('ESTADO_ASISTIDO')},
+            {"persona_id": 2, "fecha": "2025-12-16", "hora": "11:00:00", "estado": diccionario_estados.get('ESTADO_ASISTIDO')},
+            {"persona_id": 2, "fecha": "2025-10-25", "hora": "10:30:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
+
+            # ===== CARLOS RODRIGUEZ (persona_id 3) - Múltiples turnos =====
+            {"persona_id": 3, "fecha": "2025-09-20", "hora": "09:30:00", "estado": diccionario_estados.get('ESTADO_ASISTIDO')},
+            {"persona_id": 3, "fecha": "2025-10-08", "hora": "12:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 3, "fecha": "2025-11-17", "hora": "11:30:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 3, "fecha": "2025-11-20", "hora": "09:30:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
+            {"persona_id": 3, "fecha": "2025-12-18", "hora": "13:30:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
+
+            # ===== ANA MARTINEZ (persona_id 4) - Varios turnos =====
+            {"persona_id": 4, "fecha": "2025-10-22", "hora": "10:00:00", "estado": diccionario_estados.get('ESTADO_ASISTIDO')},
+            {"persona_id": 4, "fecha": "2025-11-18", "hora": "15:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 4, "fecha": "2025-11-21", "hora": "14:00:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
+            {"persona_id": 4, "fecha": "2025-12-12", "hora": "09:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+
+            # ===== ROBERTO LÓPEZ (persona_id 5) - Varios turnos con cancelados =====
+            {"persona_id": 5, "fecha": "2025-09-18", "hora": "16:00:00", "estado": diccionario_estados.get('ESTADO_ASISTIDO')},
+            {"persona_id": 5, "fecha": "2025-10-28", "hora": "11:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
+            {"persona_id": 5, "fecha": "2025-11-19", "hora": "09:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 5, "fecha": "2025-11-30", "hora": "15:30:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
+            {"persona_id": 5, "fecha": "2025-12-08", "hora": "10:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
+            {"persona_id": 5, "fecha": "2025-12-15", "hora": "13:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
+            {"persona_id": 5, "fecha": "2025-12-22", "hora": "14:30:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
+
+            # ===== LAURA FERNÁNDEZ (persona_id 6) - 6 turnos cancelados (deshabilitada) =====
             {"persona_id": 6, "fecha": "2025-09-10", "hora": "10:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
             {"persona_id": 6, "fecha": "2025-09-15", "hora": "11:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
             {"persona_id": 6, "fecha": "2025-10-05", "hora": "12:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
@@ -121,13 +159,11 @@ def create_sample_data():
             {"persona_id": 6, "fecha": "2025-10-15", "hora": "14:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
             {"persona_id": 6, "fecha": "2025-10-20", "hora": "15:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
 
-            # Más turnos cancelados para variedad
-            {"persona_id": 2, "fecha": "2025-10-25", "hora": "10:30:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
-
-            # Turnos Asistidos
-            {"persona_id": 2, "fecha": "2025-12-16", "hora": "11:00:00", "estado": diccionario_estados.get('ESTADO_ASISTIDO')},
-            {"persona_id": 5, "fecha": "2025-09-18", "hora": "16:00:00", "estado": diccionario_estados.get('ESTADO_ASISTIDO')},
+            # ===== DIEGO SANCHEZ (persona_id 7) - Variedad de estados =====
             {"persona_id": 7, "fecha": "2025-09-20", "hora": "09:30:00", "estado": diccionario_estados.get('ESTADO_ASISTIDO')},
+            {"persona_id": 7, "fecha": "2025-10-18", "hora": "14:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            {"persona_id": 7, "fecha": "2025-11-25", "hora": "10:30:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
+            {"persona_id": 7, "fecha": "2025-12-28", "hora": "16:00:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
         ]
 
         # Crear los turnos de prueba

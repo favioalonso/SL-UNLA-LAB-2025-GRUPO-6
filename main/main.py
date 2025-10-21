@@ -273,26 +273,26 @@ def confirmar_turno(turno_id: int, db: Session = Depends(get_db)):
 
 # ============ ENDPOINTS DE REPORTES ============
 
-@app.get("/reportes/turnos-por-persona", response_model= schemasTurno.PersonaConTurnos)
+@app.get("/reportes/turnos-por-persona", response_model=schemasTurno.PersonaConTurnos)
 def get_turnos_por_persona(dni: str = Query(
         description="DNI de la persona(8 digitos)",
         min_length=8,
         max_length=8,
-        regex=r"\d{8}"  #\d: tiene que ser numerico - {8}: ocho digitos  
+        regex=r"\d{8}"  #\d: tiene que ser numerico - {8}: ocho digitos
         #regex: patron de busqueda, le digo que restricciones tiene que tener el dni (r: para que no interprete como barra invertida el \d)
         #Defino el formato del dni con sus validaciones
     ),
     db: Session = Depends(get_db)):
     try:
-        turnos = crudTurno.get_turnos_por_dni(db, dni)
-        if turnos is None:
+        resultado = crudTurno.get_turnos_por_dni(db, dni)
+        if resultado is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No se encontró una persona con el DNI {dni}")
 
         #Persona con dni existente pero sin turnos
-        if not turnos["turnos"]:
+        if resultado["total_turnos"] == 0:
             raise HTTPException(status_code=404, detail=f"La persona con DNI {dni} existe pero no tiene turnos registrados.")
-        
-        return turnos
+
+        return resultado
 
     except HTTPException:
         raise
@@ -365,22 +365,19 @@ def get_turnos_cancelados_mes_actual(db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al generar el reporte: {str(e)}"
         )
-@app.get("/reportes/turnos-confirmados", response_model=schemasTurno.RespuestaTurnosPaginados)
-def get_reporte_turnos_confirmados_por_fecha(fecha_desde: date, fecha_hasta: date,
-                                              pag:int = Query(1, ge=1, description="Número de página"),
-                                              por_pag:int = Query(5, ge=1, le=100, description="Registros por página"),
-                                              db: Session = Depends(get_db)):
+@app.get("/reportes/turnos-confirmados", response_model=schemasTurno.RespuestaTurnosConfirmadosPaginados)
+def get_reporte_turnos_confirmados_por_fecha(fecha_desde: date, fecha_hasta: date, db: Session = Depends(get_db)):
     try:
-        reporte_confirmados = crudTurno.get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, pag, por_pag)
+        reporte_confirmados = crudTurno.get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip=0, limit=5)
         if reporte_confirmados["total_registros"] == 0:
             raise HTTPException(status_code=404, detail=f"No hay turnos confirmados desde {fecha_desde} hasta {fecha_hasta}")
         return reporte_confirmados
-    
-    except Exception as excepcion:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al generar el reporte: {excepcion}")
 
+    except Exception as excepcion:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {excepcion}")
+#GET /reportes/estado-personas?habilitada=true/false
 @app.get("/reportes/estado-personas/{estado}", response_model=list[schemas.PersonaOut])
-def get_reporte_personas_por_estado(estado: bool, db: Session = Depends(get_db)):
+def get_reporte_personas_por_estado(estado: schemas.Booleano_Estado, db: Session = Depends(get_db)):
     try:
         reporte_estado_personas = crud.get_personas_habilitadas_o_deshabilitadas(estado, db)
         if not reporte_estado_personas:

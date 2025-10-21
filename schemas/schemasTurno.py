@@ -1,8 +1,8 @@
 from pydantic import BaseModel, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict 
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from datetime import date, time
 from schemas.schemas import PersonaOut
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -42,8 +42,8 @@ class HorariosResponse(BaseModel):
 class MensajeResponse(BaseModel):
     mensaje: str
 
-#Nueva clase para que el turno solo salga con los datos necesarios y no repita la persona reiteradas veces
-class TurnoDetalleSimple(BaseModel):
+#Schema optimizado para turno sin datos de persona (evita redundancia)
+class TurnoSinPersona(BaseModel):
     id: int
     fecha: date
     hora: time
@@ -52,22 +52,32 @@ class TurnoDetalleSimple(BaseModel):
     class Config:
         from_attributes = True
 
-#Clase PersonaConTurnos para que solo me muestre una ves la persona y el resto sean los turnos que tiene
+#Schema para persona con sus turnos (estructura optimizada)
 class PersonaConTurnos(BaseModel):
     persona: PersonaOut
-    turnos: List[TurnoDetalleSimple]
+    turnos: List[TurnoSinPersona]
+    total_turnos: int
 
-#Clase para ver a las personas con sus turnos cancelados
+#Clase para ver a las personas con sus turnos cancelados (optimizada)
 class PersonaConTurnosCancelados(BaseModel):
     persona: PersonaOut
     turnos_cancelados_contador: int
-    turnos_cancelados_detalle: List[TurnoDetalleSimple] #Lista de los turnos cancelados para mostrar el detalle
+    turnos_cancelados_detalle: List[TurnoSinPersona] #Lista de turnos cancelados sin redundancia de persona
 
-#Estructura de paginación
+#Schema para representar persona con turnos en un reporte por fecha (estructura simplificada)
+class PersonaTurnosFecha(BaseModel):
+    persona: Dict[str, Any]  # Diccionario con id, nombre, dni
+    turnos: List[Dict[str, Any]]  # Lista de turnos sin datos de persona
+
+#Estructura de paginación (optimizada con agrupación por persona)
+class RespuestaTurnosConfirmadosPaginados(BaseModel):
+    total_registros: int
+    personas_con_turnos: List[Dict[str, Any]]  # Lista de personas con sus turnos confirmados
+
+#Estructura de paginación (legacy - mantener para compatibilidad)
 class RespuestaTurnosPaginados(BaseModel):
     total_registros: int
     turnos: List[TurnoOut]
-    pagina: int
 
 #Carga las variables del archivo .env
 load_dotenv()
