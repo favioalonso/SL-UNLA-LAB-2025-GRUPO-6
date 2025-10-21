@@ -334,7 +334,8 @@ def get_turnos_por_fecha(
         turnos = crudTurno.get_turnos_por_fecha(db, fecha_valida)
         if not turnos:
             raise HTTPException(status_code=status.HTTP_204_NO_CONTENT)
-        return {"fecha": fecha, "turnos": turnos}
+        cantidad_total_turnos = sum(len(persona["turnos"]) for persona in turnos)
+        return {"fecha": fecha, "cantidad": cantidad_total_turnos, "turnos": turnos}
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -352,11 +353,6 @@ def get_turnos_por_fecha(
 def get_turnos_cancelados_mes_actual(db: Session = Depends(get_db)):
     try:
         turnos = crudTurno.get_turnos_cancelados_mes_actual(db)
-        if not turnos:
-            raise HTTPException(
-                status_code=status.HTTP_204_NO_CONTENT,
-                detail="No hay turnos cancelados en el mes actual."
-            )
         return turnos
     except HTTPException:
         raise
@@ -387,4 +383,17 @@ def get_reporte_personas_por_estado(estado: bool, db: Session = Depends(get_db))
 
     except Exception as excepcion:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {excepcion}")
+    
+@app.get("/reportes/turnos-cancelados-por-mes-reformado", status_code=status.HTTP_200_OK)
+def get_turnos_cancelados_mes_actual_reformado(db: Session = Depends(get_db)):
+    try:
+        turnos = crudTurno.get_turnos_cancelados_mes_actual_reformado(db)
+        return turnos
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el reporte: {str(e)}"
+        )
     

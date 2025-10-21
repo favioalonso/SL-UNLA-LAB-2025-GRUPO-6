@@ -517,7 +517,6 @@ def get_turnos_cancelados_mes_actual(db: Session):
                 {
                     "id": turno.id,
                     "persona_id": turno.persona_id,
-                    "fecha": turno.fecha.strftime("%Y-%m-%d"),
                     "hora": turno.hora.strftime("%H:%M"),
                     "estado": turno.estado
                 }
@@ -588,5 +587,67 @@ def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int =
         "total_registros": total_registros,
         "personas_con_turnos": list(personas_dict.values())
     }
+
+
+#Funcion de turnos cancelados en el mes actual, reformado para que solo realice una consulta, sin usar group_by, por recomendacion en la devolucion de la presentacion 
+def get_turnos_cancelados_mes_actual_reformado(db: Session):
+    try:
+        # Fecha actual
+        fecha_actual = datetime.now()
+        anio_actual = fecha_actual.year
+        mes_actual = fecha_actual.month
+
+        # Obtener todos los turnos cancelados del mes actual en una sola consulta
+        turnos_cancelados = (
+            db.query(models.Turno)
+            .options(joinedload(models.Turno.persona))
+            .filter(
+                func.strftime("%Y", models.Turno.fecha) == str(anio_actual),
+                func.strftime("%m", models.Turno.fecha) == f"{mes_actual:02d}",
+                func.lower(models.Turno.estado) == diccionario_estados.get("ESTADO_CANCELADO").lower()
+            )
+            .order_by(models.Turno.persona_id, models.Turno.fecha)
+            .all()
+        )
+        # Agrupar turnos por persona, se diferencia del otro endpoint en que no realiza la reforma de los datos por fecha, sino por persona.
+        personas_dict = {}
+        for turno in turnos_cancelados:
+            persona = turno.persona
+            if persona.id not in personas_dict:
+                personas_dict[persona.id] = {
+                    "persona": {
+                        "id": persona.id,
+                        "nombre": persona.nombre,
+                        "dni": persona.dni,
+                        "cantidad_de_cancelados": 0
+                    },
+                    "turnos_cancelados": []
+                }
+
+            personas_dict[persona.id]["turnos_cancelados"].append({
+                "id": turno.id,
+                "fecha": turno.fecha.strftime("%Y-%m-%d"),
+                "hora": turno.hora.strftime("%H:%M"),
+                "estado": turno.estado
+            })
+            personas_dict[persona.id]["persona"]["cantidad_de_cancelados"] += 1
+
+        # Convertir el diccionari a lista, para respuesta
+        detalle_por_persona = list(personas_dict.values())
+
+        # Calcular cantidad total de turnos cancelados
+        cantidad_total = len(turnos_cancelados)
+
+        return {
+            "anio": anio_actual,
+            "mes": meses_nombres[mes_actual - 1],
+            "cantidad_total": cantidad_total,
+            "detalle_por_persona": detalle_por_persona
+        }
+
+    except SQLAlchemyError as e:
+        raise Exception(f"Error en la base de datos al generar el reporte de turnos cancelados: {e}")
+    except Exception as e:
+        raise Exception(f"Error inesperado al generar el reporte de turnos cancelados: {e}")
 
 
