@@ -500,19 +500,19 @@ def get_turnos_cancelados_mes_actual(db: Session):
             .all()
         )
         
+        turnos_mes = (
+                db.query(models.Turno)
+                .filter(
+                    func.strftime("%Y", models.Turno.fecha) == str(anio_actual),
+                    func.strftime("%m", models.Turno.fecha) == f"{mes_actual:02d}",
+                    func.lower(models.Turno.estado) == diccionario_estados.get('ESTADO_CANCELADO').lower()
+                ).all() #obtengo el detalle de los turnos de ese mes
+            )
+        
         turnos_por_dia = []#creo una lista que tendra todos los turnos cancelados. Contiene sublistas con turnos de un mismo dia
         for fila in resultados:
             dia = fila.dia
-            cantidad = fila.cantidad #es la informacion que tendra cada sub lista de turnos en un mismo dia, la fecha y la cantidad
-
-            turnos_dia = (
-                db.query(models.Turno)
-                .filter(
-                    func.date(models.Turno.fecha) == dia,
-                    func.lower(models.Turno.estado) == diccionario_estados.get('ESTADO_CANCELADO').lower()
-                ).all() #para cada resultado del group_by por dia, busco los turnos que corresponden a cada uno de esos resultados para generar las sublistas con su informacion
-            ) 
-
+            cantidad = fila.cantidad #es la informacion que tendra cada sub lista de turnos en un mismo dia, la fecha y la cantidad 
             turnos_detalle = [
                 {
                     "id": turno.id,
@@ -521,15 +521,14 @@ def get_turnos_cancelados_mes_actual(db: Session):
                     "hora": turno.hora.strftime("%H:%M"),
                     "estado": turno.estado
                 }
-                for turno in turnos_dia #una vez que tengo los turnos que corresponden a esa fila del resultado, reformo los datos para que se muestren facilmente
+                for turno in turnos_mes if turno.fecha.strftime("%Y-%m-%d") == str(fila.dia) #una vez que tengo los turnos que corresponden a esa fila del resultado, reformo los datos para que se muestren facilmente
             ]
-            
             turnos_por_dia.append({
                 "fecha": dia,
                 "cantidad_cancelados": cantidad,
                 "turnos": turnos_detalle
             }) #por cada dia muestro sus datos (fecha y cantidad de turnos cancelados) y devuelvo la sublista formada con los datos del turno
-
+        
         total_turnos_cancelados = sum(fila.cantidad for fila in resultados)
 
         return {
@@ -589,4 +588,5 @@ def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int =
         "total_registros": total_registros,
         "personas_con_turnos": list(personas_dict.values())
     }
+
 
