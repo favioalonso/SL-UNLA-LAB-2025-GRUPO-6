@@ -67,6 +67,7 @@ class PersonaConTurnosCancelados(BaseModel):
 class RespuestaTurnosPaginados(BaseModel):
     total_registros: int
     turnos: List[TurnoOut]
+    pagina: int
 
 #Carga las variables del archivo .env
 load_dotenv()

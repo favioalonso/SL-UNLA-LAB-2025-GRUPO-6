@@ -115,6 +115,3 @@ class PaginatedPersonaResponse(BaseModel):
     items: List[PersonaOut]
     metadata: PaginationMetadata
 
-class Booleano_Estado(str, Enum):
-    TRUE = "habilitado"
-    FALSE = "deshabilitado" 
