@@ -366,18 +366,21 @@ def get_turnos_cancelados_mes_actual(db: Session = Depends(get_db)):
             detail=f"Error al generar el reporte: {str(e)}"
         )
 @app.get("/reportes/turnos-confirmados", response_model=schemasTurno.RespuestaTurnosPaginados)
-def get_reporte_turnos_confirmados_por_fecha(fecha_desde: date, fecha_hasta: date, db: Session = Depends(get_db)):
+def get_reporte_turnos_confirmados_por_fecha(fecha_desde: date, fecha_hasta: date,
+                                              pag:int = Query(1, ge=1, description="Número de página"),
+                                              por_pag:int = Query(5, ge=1, le=100, description="Registros por página"),
+                                              db: Session = Depends(get_db)):
     try:
-        reporte_confirmados = crudTurno.get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip=0, limit=5)
+        reporte_confirmados = crudTurno.get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, pag, por_pag)
         if reporte_confirmados["total_registros"] == 0:
             raise HTTPException(status_code=404, detail=f"No hay turnos confirmados desde {fecha_desde} hasta {fecha_hasta}")
         return reporte_confirmados
     
     except Exception as excepcion:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {excepcion}")
-#GET /reportes/estado-personas?habilitada=true/false
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al generar el reporte: {excepcion}")
+
 @app.get("/reportes/estado-personas/{estado}", response_model=list[schemas.PersonaOut])
-def get_reporte_personas_por_estado(estado: schemas.Booleano_Estado, db: Session = Depends(get_db)):
+def get_reporte_personas_por_estado(estado: bool, db: Session = Depends(get_db)):
     try:
         reporte_estado_personas = crud.get_personas_habilitadas_o_deshabilitadas(estado, db)
         if not reporte_estado_personas:

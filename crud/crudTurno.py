@@ -499,16 +499,18 @@ def get_turnos_cancelados_mes_actual(db: Session):
     except Exception as e:
         raise Exception(f"Error inesperado al generar el reporte de turnos cancelados: {e}")
 
-def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int = 0, limit: int = 100):
+def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, pag=1, por_pag=5):
 
     """
     Solicita una fecha de inicio y fin de la consulta
     Retorna una lista de turnos con estado "confirmado" entre esas fechas inclusive
-    Se aplica una paginación fija con límite 5 páginas
+    Se aplica una paginación fija con límite 5 registros por página
     """
 
     if fecha_hasta < fecha_desde:
         raise ValueError("La fecha inicial a consultar no puede ser posterior a la fecha final a consultar")
+    
+    offset = (pag - 1) * por_pag #Indica cuantos registros "saltar" para mostrar sólo los que corresponden a esa página
     
     consulta_turnos = (
         db.query(models.Turno)
@@ -520,14 +522,16 @@ def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int =
         )
     )
     total_registros = consulta_turnos.count() #Cuenta la cantidad de turnos confirmados
-    turnos_filtrados = consulta_turnos.offset(skip).limit(limit).all() #Aplica paginación
+    turnos_filtrados = consulta_turnos.offset(offset).limit(por_pag).all() #Aplica paginación
 
     #Convertimos a diccionario para el response model
     turnos_confirmados = []
     for turno in turnos_filtrados:
         turnos_confirmados.append(turno_diccionario(turno, turno.persona))
+  
     return {
-        "total_registros": total_registros,
-        "turnos": turnos_confirmados
-    }
+             "total_registros": total_registros,
+            "turnos": turnos_confirmados,
+            "pagina": pag
+        }
 
