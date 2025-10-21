@@ -351,14 +351,24 @@ def get_turnos_por_dni(db: Session, dni: str):
     #joinedload sirve para optimizar la instruccion, en vez de consultar por cada turno para que traiga los datos, los trae a todos en un solo llamado
     turnos_db = db.query(models.Turno).options(joinedload(models.Turno.persona)).filter(models.Turno.persona_id == persona.id).all()
 
-    #Hacer la conversion de los datos
-    resultado = []
-    for turno in turnos_db:
-        #Bucle para convertir y añadir el diccionario a la lista
-        resultado.append(turno_diccionario(turno,turno.persona))
+    persona_estructurada = schemas.PersonaOut(
+        **persona.__dict__, #obtiene los datos de la persona y ** esto hace que los separe para que schemas de personasOut tome lo que necesita
+        edad= calcular_edad(persona.fecha_nacimiento)
+    )
 
-    return resultado
-
+    turnos_simplificados = [
+            {
+                "id": turno.id,
+                "fecha": turno.fecha,
+                "hora": turno.hora,
+                "estado": turno.estado
+            }
+            for turno in turnos_db
+    ]
+    return{
+        "persona": persona_estructurada,
+        "turnos": turnos_simplificados
+    }
 
 #Funcion del reporte de turnos cancelados (minimo 5)
 
@@ -387,7 +397,15 @@ def get_personas_turnos_cancelados(db: Session, min_cancelados: int):
         )
 
         #Le damos una estructura limpia a los datos con turno_diccionario
-        turnos_limpios =[turno_diccionario(i, i.persona) for i in turnos_cancelados_detalle]
+        turnos_limpios =[
+            {
+                "id": turno.id,
+                "fecha":turno.fecha,
+                "hora": turno.hora,
+                "estado":turno.estado
+            }
+            for turno in turnos_cancelados_detalle
+        ]
 
         #Lo mismo para la persona
         persona_estructurada = schemas.PersonaOut(

@@ -273,7 +273,7 @@ def confirmar_turno(turno_id: int, db: Session = Depends(get_db)):
 
 # ============ ENDPOINTS DE REPORTES ============
 
-@app.get("/reportes/turnos-por-persona", response_model= list[schemasTurno.TurnoOut])
+@app.get("/reportes/turnos-por-persona", response_model= schemasTurno.PersonaConTurnos)
 def get_turnos_por_persona(dni: str = Query(
         description="DNI de la persona(8 digitos)",
         min_length=8,
@@ -289,7 +289,7 @@ def get_turnos_por_persona(dni: str = Query(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No se encontró una persona con el DNI {dni}")
 
         #Persona con dni existente pero sin turnos
-        if not turnos:
+        if not turnos["turnos"]:
             raise HTTPException(status_code=404, detail=f"La persona con DNI {dni} existe pero no tiene turnos registrados.")
         
         return turnos

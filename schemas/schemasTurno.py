@@ -42,11 +42,26 @@ class HorariosResponse(BaseModel):
 class MensajeResponse(BaseModel):
     mensaje: str
 
+#Nueva clase para que el turno solo salga con los datos necesarios y no repita la persona reiteradas veces
+class TurnoDetalleSimple(BaseModel):
+    id: int
+    fecha: date
+    hora: time
+    estado: str
+
+    class Config:
+        from_attributes = True
+
+#Clase PersonaConTurnos para que solo me muestre una ves la persona y el resto sean los turnos que tiene
+class PersonaConTurnos(BaseModel):
+    persona: PersonaOut
+    turnos: List[TurnoDetalleSimple]
+
 #Clase para ver a las personas con sus turnos cancelados
 class PersonaConTurnosCancelados(BaseModel):
     persona: PersonaOut
     turnos_cancelados_contador: int
-    turnos_cancelados_detalle: List[TurnoOut] #Lista de los turnos cancelados para mostrar el detalle
+    turnos_cancelados_detalle: List[TurnoDetalleSimple] #Lista de los turnos cancelados para mostrar el detalle
 
 #Estructura de paginación
 class RespuestaTurnosPaginados(BaseModel):
