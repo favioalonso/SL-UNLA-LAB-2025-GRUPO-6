@@ -134,14 +134,35 @@ def create_turnos(db: Session, turno: schemasTurno.TurnoCreate):
     except Exception:
         raise
 
-#Funcion para el endpoint GET/turnos
+#Funcion para el endpoint GET/turnos (optimizada - sin redundancia)
 def get_turnos(db: Session, skip: int, limit: int):
+    """
+    Obtiene turnos agrupados por persona para evitar redundancia
+    Si una persona tiene múltiples turnos, se muestra una sola vez con todos sus turnos
+    """
     try:
         turnos = db.query(models.Turno).options(joinedload(models.Turno.persona)).offset(skip).limit(limit).all()
-        turnos_lista = []
+
+        # Agrupar por persona para evitar redundancia
+        personas_dict = {}
         for turno in turnos:
-            turnos_lista.append(turno_diccionario(turno, turno.persona))
-        return turnos_lista
+            persona_id = turno.persona_id
+            if persona_id not in personas_dict:
+                personas_dict[persona_id] = {
+                    "persona": schemas.PersonaOut(
+                        **turno.persona.__dict__,
+                        edad=calcular_edad(turno.persona.fecha_nacimiento)
+                    ),
+                    "turnos": []
+                }
+            personas_dict[persona_id]["turnos"].append({
+                "id": turno.id,
+                "fecha": turno.fecha,
+                "hora": turno.hora,
+                "estado": turno.estado
+            })
+
+        return list(personas_dict.values())
     except Exception as e:
         raise Exception(f"Error al consultar turnos: {e}")
     

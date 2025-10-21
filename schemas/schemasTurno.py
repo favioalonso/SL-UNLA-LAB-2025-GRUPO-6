@@ -69,6 +69,11 @@ class PersonaTurnosFecha(BaseModel):
     persona: Dict[str, Any]  # Diccionario con id, nombre, dni
     turnos: List[Dict[str, Any]]  # Lista de turnos sin datos de persona
 
+#Schema para listado general de turnos agrupados por persona
+class PersonaConTurnosLista(BaseModel):
+    persona: PersonaOut
+    turnos: List[Dict[str, Any]]  # Lista de turnos sin datos de persona
+
 #Estructura de paginación (optimizada con agrupación por persona)
 class RespuestaTurnosConfirmadosPaginados(BaseModel):
     total_registros: int
