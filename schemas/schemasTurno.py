@@ -79,10 +79,19 @@ class RespuestaTurnosConfirmadosPaginados(BaseModel):
     total_registros: int
     personas_con_turnos: List[Dict[str, Any]]  # Lista de personas con sus turnos confirmados
 
-#Estructura de paginación (legacy - mantener para compatibilidad)
+#Clase para metadata paginación
+class MetadataPaginacion(BaseModel):
+    pag: int
+    por_pag: int
+    total_pag: int
+    tiene_posterior: bool
+    tiene_anterior: bool
+
+#Estructura de paginación
 class RespuestaTurnosPaginados(BaseModel):
-    total_registros: int
     turnos: List[TurnoOut]
+    total_registros: int
+    metadata: MetadataPaginacion
 
 #Carga las variables del archivo .env
 load_dotenv()

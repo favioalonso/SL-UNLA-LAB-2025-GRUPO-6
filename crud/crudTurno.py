@@ -6,7 +6,7 @@ from datetime import date, time, timedelta, datetime
 from crud.crud import calcular_edad
 from copy import copy
 from schemas.schemasTurno import settings
-
+import math
 
 """
 USO DEL ARCHIVO DE VARIABLES DE ENTORNO .ENV
@@ -557,7 +557,7 @@ def get_turnos_cancelados_mes_actual(db: Session):
     except Exception as e:
         raise Exception(f"Error inesperado al generar el reporte de turnos cancelados: {e}")
 
-def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int = 0, limit: int = 100):
+def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, pag=1, por_pag=5):
 
     """
     Solicita una fecha de inicio y fin de la consulta
@@ -567,7 +567,9 @@ def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int =
 
     if fecha_hasta < fecha_desde:
         raise ValueError("La fecha inicial a consultar no puede ser posterior a la fecha final a consultar")
-
+    
+    offset = (pag - 1) * por_pag #Indica cuantos registros "saltar" para mostrar sólo los que corresponden a esa página
+    
     consulta_turnos = (
         db.query(models.Turno)
         .options(joinedload(models.Turno.persona)) #Agregar la persona
@@ -578,32 +580,27 @@ def get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, skip: int =
         )
     )
     total_registros = consulta_turnos.count() #Cuenta la cantidad de turnos confirmados
-    turnos_filtrados = consulta_turnos.offset(skip).limit(limit).all() #Aplica paginación
-
-    #Agrupar por persona para evitar redundancia
-    personas_dict = {}
+    turnos_filtrados = consulta_turnos.offset(offset).limit(por_pag).all() #Aplica paginación
+    
+    total_pag = math.ceil(total_registros/por_pag)
+    metadata = schemasTurno.MetadataPaginacion(
+        pag=pag,
+        por_pag=por_pag,
+        total_pag=total_pag,
+        tiene_posterior=pag < total_pag,
+        tiene_anterior=pag > 1
+    ) 
+    #Convertimos a diccionario para el response model
+    turnos_confirmados = []
     for turno in turnos_filtrados:
-        persona_id = turno.persona_id
-        if persona_id not in personas_dict:
-            personas_dict[persona_id] = {
-                "persona": schemas.PersonaOut(
-                    **turno.persona.__dict__,
-                    edad=calcular_edad(turno.persona.fecha_nacimiento)
-                ),
-                "turnos": []
-            }
-        personas_dict[persona_id]["turnos"].append({
-            "id": turno.id,
-            "fecha": turno.fecha,
-            "hora": turno.hora,
-            "estado": turno.estado
-        })
-
+        turnos_confirmados.append(turno_diccionario(turno, turno.persona))
+  
     return {
-        "total_registros": total_registros,
-        "personas_con_turnos": list(personas_dict.values())
+            "turnos": turnos_confirmados,
+            "total_registros": total_registros,
+            "metadata": metadata,
+            
     }
-
 
 #Funcion de turnos cancelados en el mes actual, reformado para que solo realice una consulta, sin usar group_by, por recomendacion en la devolucion de la presentacion 
 def get_turnos_cancelados_mes_actual_reformado(db: Session):
