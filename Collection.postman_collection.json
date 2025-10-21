@@ -1,11 +1,11 @@
 {
 	"info": {
-		"_postman_id": "5f27dc4a-9fe6-4a2b-84ca-c9ea724abcde",
+		"_postman_id": "43205a1b-2acf-4ee5-9be1-205353054cb9",
 		"name": "Collection",
 		"description": "# 🚀 Get started here\n\nThis template guides you through CRUD operations (GET, POST, PUT, DELETE), variables, and tests.\n\n## 🔖 **How to use this template**\n\n#### **Step 1: Send requests**\n\nRESTful APIs allow you to perform CRUD operations using the POST, GET, PUT, and DELETE HTTP methods.\n\nThis collection contains each of these [request](https://learning.postman.com/docs/sending-requests/requests/) types. Open each request and click \"Send\" to see what happens.\n\n#### **Step 2: View responses**\n\nObserve the response tab for status code (200 OK), response time, and size.\n\n#### **Step 3: Send new Body data**\n\nUpdate or add new data in \"Body\" in the POST request. Typically, Body data is also used in PUT request.\n\n```\n{\n    \"name\": \"Add your name in the body\"\n}\n\n ```\n\n#### **Step 4: Update the variable**\n\nVariables enable you to store and reuse values in Postman. We have created a [variable](https://learning.postman.com/docs/sending-requests/variables/) called `base_url` with the sample request [https://postman-api-learner.glitch.me](https://postman-api-learner.glitch.me). Replace it with your API endpoint to customize this collection.\n\n#### **Step 5: Add tests in the \"Scripts\" tab**\n\nAdding tests to your requests can help you confirm that your API is working as expected. You can write test scripts in JavaScript and view the output in the \"Test Results\" tab.\n\n<img src=\"https://content.pstmn.io/fa30ea0a-373d-4545-a668-e7b283cca343/aW1hZ2UucG5n\" alt=\"\" height=\"1530\" width=\"2162\">\n\n## 💪 Pro tips\n\n- Use folders to group related requests and organize the collection.\n    \n- Add more [scripts](https://learning.postman.com/docs/writing-scripts/intro-to-scripts/) to verify if the API works as expected and execute workflows.\n    \n\n## 💡Related templates\n\n[API testing basics](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9a37a28-055b-49cd-8c7e-97494a21eb54&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[API documentation](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9c28f47-1253-44af-a2f3-20dce4da1f18&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[Authorization methods](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=31a9a6ed-4cdf-4ced-984c-d12c9aec1c27&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "48613094",
-		"_collection_link": "https://martinezmartina2002-8227090.postman.co/workspace/SL-UNLA-LAB-2025-GRUPO-6~b3af5226-5a15-47ca-83a4-a6b689140551/collection/48568835-5f27dc4a-9fe6-4a2b-84ca-c9ea724abcde?action=share&source=collection_link&creator=48613094"
+		"_exporter_id": "48568835",
+		"_collection_link": "https://martinezmartina2002-8227090.postman.co/workspace/SL-UNLA-LAB-2025-GRUPO-6~b3af5226-5a15-47ca-83a4-a6b689140551/collection/48613094-43205a1b-2acf-4ee5-9be1-205353054cb9?action=share&source=collection_link&creator=48568835"
 	},
 	"item": [
 		{
@@ -656,7 +656,35 @@
 						},
 						"description": "Devuelve todos los turnos de una fecha específica con información de la persona (nombre y DNI), sin discriminar por estado del turno."
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Ejemplo turnos de la fecha 2025-10-20",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/turnos-por-fecha?fecha=2025-09-25",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"turnos-por-fecha"
+									],
+									"query": [
+										{
+											"key": "fecha",
+											"value": "2025-09-25"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
 				},
 				{
 					"name": "Turnos cancelados del mes actual",
@@ -700,7 +728,35 @@
 						},
 						"description": "Devuelve todos los turnos de una persona por su DNI, sin discriminar por estado del turno."
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Ejemplo turnos con persona DNI 12345678",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/turnos-por-persona?dni=12345678",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"turnos-por-persona"
+									],
+									"query": [
+										{
+											"key": "dni",
+											"value": "12345678"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
 				},
 				{
 					"name": "Personas con 5+ turnos cancelados",
@@ -733,7 +789,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/reportes/turnos-confirmados?fecha_desde=2025-11-01&fecha_hasta=2025-11-30",
+							"raw": "{{base_url}}/reportes/turnos-confirmados?fecha_desde=2025-12-01&fecha_hasta=2025-12-30",
 							"host": [
 								"{{base_url}}"
 							],
@@ -744,17 +800,80 @@
 							"query": [
 								{
 									"key": "fecha_desde",
-									"value": "2025-11-01"
+									"value": "2025-12-01"
 								},
 								{
 									"key": "fecha_hasta",
-									"value": "2025-11-30"
+									"value": "2025-12-30"
 								}
 							]
 						},
 						"description": "Devuelve todos los turnos confirmados en un período de tiempo (desde-hasta, inclusive). Los resultados están paginados mostrando 5 registros por página."
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Ejemplo turnos con fecha inválida",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/turnos-confirmados?fecha_desde=2025-11-30&fecha_hasta=2025-11-01",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"turnos-confirmados"
+									],
+									"query": [
+										{
+											"key": "fecha_desde",
+											"value": "2025-11-30"
+										},
+										{
+											"key": "fecha_hasta",
+											"value": "2025-11-01"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Ejemplo turnos desde 2025-10-20 hasta 2025-10-21",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/turnos-confirmados?fecha_desde=2025-11-01&fecha_hasta=2025-11-30",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"turnos-confirmados"
+									],
+									"query": [
+										{
+											"key": "fecha_desde",
+											"value": "2025-11-01"
+										},
+										{
+											"key": "fecha_hasta",
+											"value": "2025-11-30"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
 				},
 				{
 					"name": "Personas por estado (habilitado/deshabilitado)",
@@ -762,17 +881,80 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/reportes/estado-personas/habilitado",
+							"raw": "{{base_url}}/reportes/estado-personas/true",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"reportes",
 								"estado-personas",
-								"habilitado"
+								"true"
 							]
 						},
 						"description": "Devuelve la lista de personas filtradas por su estado de habilitación. Valores válidos: 'habilitado' o 'deshabilitado'."
+					},
+					"response": [
+						{
+							"name": "Ejemplo personas habilitadas",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/estado-personas/true",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"estado-personas",
+										"true"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						},
+						{
+							"name": "Ejemplo personas deshabilitadas",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/estado-personas/false",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"estado-personas",
+										"false"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Turnos cancelados del mes actual por persona",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/turnos-cancelados-por-mes-reformado",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"turnos-cancelados-por-mes-reformado"
+							]
+						}
 					},
 					"response": []
 				}

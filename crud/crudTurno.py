@@ -407,7 +407,7 @@ def get_turnos_por_dni(db: Session, dni: str):
 def get_personas_turnos_cancelados(db: Session, min_cancelados: int):
 
     personas_estado_cancelado =(
-    db.query(models.Persona, func.count(models.Turno.id).label("contador_de_turnos_cancelados")) #Trae a la persona, y un contador de sus turnos cancelados
+    db.query(models.Persona, func.count(models.Turno.id).label("contador_de_turnos")) #Trae a la persona, y un contador de sus turnos
     .join(models.Turno, models.Persona.id == models.Turno.persona_id).filter(func.lower(models.Turno.estado) == diccionario_estados.get('ESTADO_CANCELADO').lower())
     #Uso join para unir a la persona con sus turnos mediante el persona_id y filtro los del estado "cancelado"
     .group_by(models.Persona.id) #Agrupamos por persona

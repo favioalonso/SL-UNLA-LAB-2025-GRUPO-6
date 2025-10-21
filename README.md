@@ -57,7 +57,7 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
    ```
 
 2. **Accede a la documentación interactiva:**
-   - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+   - Swagger UI: [http://localhost:8C000/docs](http://localhost:8000/docs)
    - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 3. **Accede a la Collection de Postman:**
@@ -222,8 +222,11 @@ El proyecto sigue el patrón de **Arquitectura Limpia** con:
 - **Modelos Pydantic**: Para validación automática y serialización
 - **SQLAlchemy ORM**: Para abstracción de base de datos
 
-## Link al video
+## Link al video Hito 1
 https://drive.google.com/file/d/1zRo9_vqyDQRZcNrbqrovAnPfdVERRIvS/view?usp=sharing
+
+## Link al video Hito 2
+https://drive.google.com/file/d/1_mOngNIFYOWGUB_p0UwPGWNjN9FxRYMx/view?usp=sharing
 
 ## Licencia
 
