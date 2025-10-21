@@ -329,13 +329,29 @@ def update_turno(db: Session, turno_id: int, turno_update: schemasTurno.TurnoUpd
        raise ValueError("Ya existe un turno reservado en esa fecha y hora")
    
    if turno_update.estado is not None: #Verifica si el usuario quiere modificar el turno
-        estados_permitidos = settings.estados_turnos #Trae la lista de estados del archivo .env
-        if turno_update.estado.lower() not in [i.lower() for i in estados_permitidos]: #cree un array para que todos los estados permitidos se tomen como minusculas tambien   
-            raise ValueError( #si el estado enviado no esta en la lista va a este raise, sino sigue con el programa
-                 f"Estado inválido. Los estados permitidos son: {', '.join(estados_permitidos)}" #Si no es ninguno de los mencionados tira un mensaje
-        )
+            
+            # 1. Obtenemos los VALORES permitidos del diccionario (ej: ["Pendiente", "Cancelado", ...])
+            #    'diccionario_estados' ya está definido al principio del archivo
+            estados_permitidos_valores = list(diccionario_estados.values()) # Convertimos a lista por si acaso
+            
+            # 2. Creamos una lista de esos valores en minúscula para la comparación
+            estados_permitidos_lower = [estado.lower() for estado in estados_permitidos_valores]
 
-
+            # 3. Comparamos la entrada del usuario (en minúscula)
+            estado_enviado_lower = turno_update.estado.lower()
+            
+            if estado_enviado_lower not in estados_permitidos_lower:
+                # 4. Si no es válido, lanzamos un error con los valores correctos (capitalizados)
+                raise ValueError(
+                    f"Estado inválido. Los estados permitidos son: {', '.join(estados_permitidos_valores)}"
+                )
+            
+            # 5. Si es válido, encontramos el valor con la capitalización correcta y lo asignamos
+            #    Esto asegura que en la BD se guarde "Cancelado" y no "cancelado".
+            for estado_valido in estados_permitidos_valores:
+                if estado_valido.lower() == estado_enviado_lower:
+                    nuevo_estado = estado_valido # Asignamos el valor correcto
+                    break
    
    try:
        #Asignacion de los nuevos valores
