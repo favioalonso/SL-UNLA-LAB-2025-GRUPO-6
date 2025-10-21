@@ -257,13 +257,9 @@ def cancelar_turno(db: Session, turno_id: int):
     if not turno_db:
         return None
 
-    # Validar que el turno no esté ya asistido
-    if turno_db.estado.lower() == diccionario_estados.get('ESTADO_ASISTIDO').lower():
-        raise ValueError("No se puede cancelar un turno que ya fue asistido")
-
-    # Validar que el turno no esté ya cancelado
-    if turno_db.estado.lower() == diccionario_estados.get('ESTADO_CANCELADO').lower():
-        raise ValueError("El turno ya está cancelado")
+    # Validar que el turno esté en estado pendiente (optimización: 1 comparación en lugar de 2)
+    if turno_db.estado.lower() != diccionario_estados.get('ESTADO_PENDIENTE').lower():
+        raise ValueError("Solo se pueden cancelar turnos en estado Pendiente")
 
     try:
         # Cambiar estado a cancelado
@@ -283,13 +279,9 @@ def confirmar_turno(db: Session, turno_id: int):
     if not turno_db:
         return None
 
-    # Validar que el turno no esté ya asistido
-    if turno_db.estado.lower() == diccionario_estados.get('ESTADO_ASISTIDO').lower():
-        raise ValueError("No se puede confirmar un turno que ya fue asistido")
-
-    # Validar que el turno no esté cancelado
-    if turno_db.estado.lower() == diccionario_estados.get('ESTADO_CANCELADO').lower():
-        raise ValueError("No se puede confirmar un turno cancelado")
+    # Validar que el turno esté en estado pendiente (optimización: 1 comparación en lugar de 2)
+    if turno_db.estado.lower() != diccionario_estados.get('ESTADO_PENDIENTE').lower():
+        raise ValueError("Solo se pueden confirmar turnos en estado Pendiente")
 
     try:
         # Cambiar estado a confirmado
