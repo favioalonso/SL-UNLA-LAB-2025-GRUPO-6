@@ -182,28 +182,43 @@ La aplicación incluye **datos de prueba automáticos** que se crean al iniciar 
 
 | Estado | Cantidad | Descripción |
 |--------|----------|-------------|
-| ✅ Habilitadas | 6 | Edades entre 25-46 años, diversos proveedores de email |
+| ✅ Habilitadas | 6 | Edades entre 24-46 años, diversos proveedores de email |
 | ❌ Deshabilitadas | 1 | Laura Fernández (6 turnos cancelados) - demuestra deshabilitación automática |
 
-### 📅 Turnos (20 registros)
+**Detalle de personas:**
+- Juan Pérez (35 años) - Gmail
+- María García (40 años) - Hotmail
+- Carlos Rodriguez (29 años) - Yahoo
+- Ana Martinez (32 años) - Outlook
+- Roberto López (46 años) - Gmail
+- Laura Fernández (24 años, deshabilitada) - Hotmail
+- Diego Sanchez (36 años) - Yahoo
+
+### 📅 Turnos (45 registros)
 
 Los turnos se distribuyen estratégicamente para probar todos los endpoints de reportes:
 
 | Estado | Cantidad | Propósito |
 |--------|----------|-----------|
-| 🟡 **Pendientes** | 5 | Operaciones de confirmación y cancelación |
-| 🟢 **Confirmados** | 5 | Reportes entre fechas (nov 15-19, 2025) con paginación |
-| 🔴 **Cancelados** | 7 | Reporte de personas con 5+ cancelados (6 de Laura + 1 de María) |
-| 🔵 **Asistidos** | 3 | Validación de restricciones (no modificables/eliminables) |
+| 🟡 **Pendientes** | 11 | Operaciones de confirmación y cancelación |
+| 🟢 **Confirmados** | 15 | Reportes entre fechas con paginación |
+| 🔴 **Cancelados** | 12 | Reporte de personas con 5+ cancelados (6 de Laura, 5 de Roberto, 1 de María) |
+| 🔵 **Asistidos** | 7 | Validación de restricciones (no modificables/eliminables) |
+
+**Características destacadas:**
+- Múltiples turnos el mismo día para diferentes personas (casos de prueba de agrupación)
+- Turnos distribuidos en septiembre, octubre, noviembre y diciembre 2025
+- Casos de personas con múltiples estados de turnos para testing completo
 
 ### ✨ Escenarios de Prueba Incluidos
 
-- 📆 **Reportes por fecha**: Turnos en septiembre, octubre y noviembre 2025
-- 📊 **Reportes de cancelados del mes**: Múltiples turnos en meses recientes
-- 👤 **Reportes por persona**: Cada persona con turnos en diferentes estados
-- ⚠️ **Personas con 5+ turnos cancelados**: Laura Fernández (condición automática)
-- 📈 **Reportes de confirmados entre fechas**: 5 turnos en rango específico
+- 📆 **Reportes por fecha**: Turnos distribuidos en septiembre, octubre, noviembre y diciembre 2025
+- 📊 **Reportes de cancelados del mes**: Múltiples turnos cancelados en octubre 2025 (6 de Laura)
+- 👤 **Reportes por persona**: Cada persona con múltiples turnos en diferentes estados
+- ⚠️ **Personas con 5+ turnos cancelados**: Laura Fernández (6 cancelados) y Roberto López (5 cancelados)
+- 📈 **Reportes de confirmados entre fechas**: 15 turnos confirmados distribuidos en varios meses
 - 🔄 **Estado de personas**: 6 habilitadas y 1 deshabilitada
+- 🔀 **Múltiples turnos mismo día**: Juan (2 turnos el 22/11), María (2 turnos el 23/11), Carlos (2 turnos el 24/11)
 
 ## Manejo de Errores
 
