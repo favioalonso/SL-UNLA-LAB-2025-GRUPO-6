@@ -57,7 +57,7 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
    ```
 
 2. **Accede a la documentación interactiva:**
-   - Swagger UI: [http://localhost:8C000/docs](http://localhost:8000/docs)
+   - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
    - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 3. **Accede a la Collection de Postman:**

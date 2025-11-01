@@ -1,6 +1,6 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, model_validator, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from datetime import date, time
+from datetime import date, time, timedelta, datetime
 from schemas.schemas import PersonaOut
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
@@ -105,31 +105,41 @@ RUTA_ARCHIVO_ENV = Path(__file__).resolve().parent.parent/'.env'
 
 # Clase de variables de entorno
 class ConfiguracionInicial(BaseSettings):
-    
-    #Variable de franja horaria 
-    horarios_turnos: List[str] 
+    #Variables de control de franja horaria
+    horario_inicio: str
+    horario_fin: str
+    intervalo: int
+
+    #Variable de franja horaria, no se leerá directamente desde el archivo .env 
+    horarios_turnos: List[str] = Field(default=[], init=False)
     
     #Variable de turnos posibles
-    estados_posibles: List[str]
+    estados_posibles: Dict[str, str]
 
     #Definimos la configuracion del archivo .env
     model_config = SettingsConfigDict(env_file=RUTA_ARCHIVO_ENV, env_file_encoding='utf-8') #'utf-8' asegura que no existan errores por caracteres extraños
     
-    #Convertimos 'estados_posibles' a un diccionario para filtrar por clave y evitar errores al comparar
-    
-    #Validor de formato Lista[str]
-    @field_validator('estados_posibles', mode='after')
-    @classmethod
-    def convertir_lista_a_dict(cls, valor_extraido: List[str]):
-        #Creamos un diccionario de pares clave-valor
-        diccionario_estados = {}
-        for par in valor_extraido:
-            par = par.strip() #Limpiar de espacios en blanco
-            if ':' in par:
-                clave, valor = par.split(':', 1) #Se separan en clave y valor
-                diccionario_estados[clave.strip()] = valor.strip()
-                
-        return diccionario_estados 
-    
+    #Se carga la lista de horarios segun los limites del .env
+    @model_validator(mode='after')
+    def generar_lista_horarios(self):
+        try:
+            hora_inicio = datetime.strptime(self.horario_inicio, "%H:%M")
+            hora_fin = datetime.strptime(self.horario_fin, "%H:%M")
+
+            intervalo = timedelta(minutes=self.intervalo)
+
+            lista_horarios = [0]
+            hora_actual = hora_inicio
+
+            while hora_actual <= hora_fin:
+                lista_horarios.append(hora_actual.strftime("%H:%M"))
+                hora_actual += intervalo
+            self.horarios_turnos = lista_horarios
+        except ValueError as error:
+            raise ValueError(f"Error en el formato de hora: {error}")
+        return self
+       
 settings = ConfiguracionInicial()
 
+
+   

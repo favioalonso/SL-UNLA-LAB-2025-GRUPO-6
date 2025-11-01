@@ -29,7 +29,7 @@ def get_db():
         yield db
     finally:
         db.close()
-
+        
 # ============ ENDPOINTS DE PERSONAS ============
 @app.post("/personas", response_model=schemas.PersonaOut)
 def create_persona(persona: schemas.PersonaCreate, db: Session = Depends(get_db)):
