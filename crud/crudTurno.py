@@ -6,6 +6,8 @@ from datetime import date, time, timedelta, datetime
 from crud.crud import calcular_edad
 from copy import copy
 from schemas.schemasTurno import settings
+import pandas as pd
+from io import StringIO
 
 
 """
@@ -517,6 +519,97 @@ def get_turnos_confirmados_desde_hasta(db: Session, fecha_desde, fecha_hasta, pa
         "total_registros": total_registros,
         "turnos": turnos_confirmados
     }
+        
+def generar_csv_turnos_cancelados(db: Session, min_cancelados: int):
+
+    # Reutilizamos tu función
+    lista_cancelados = get_personas_turnos_cancelados(db, min_cancelados)
+
+    if not lista_cancelados:
+        return None
+
+    filas = []
+
+    for item in lista_cancelados:
+        persona = item["persona"]
+        contador = item["turnos_cancelados_contador"]
+
+        for turno in item["turnos_cancelados_detalle"]:
+            filas.append({
+                "nombre_persona": persona.nombre,
+                "dni": persona.dni,
+                "telefono": persona.telefono,
+                "habilitado": persona.habilitado,
+                "cant_cancelados": contador,
+                "turno_id": turno["id"],
+                "fecha": turno["fecha"],
+                "hora": turno["hora"]
+            })
+
+    # Crear DataFrame
+    df = pd.DataFrame(filas)
+
+    # Convertir a CSV en memoria (sin crear archivos en disco)
+    buffer = StringIO()
+    df.to_csv(buffer, index=False, sep=";")
+    buffer.seek(0)
+
+    return buffer
+
+
+
+
+def generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag):
+    """
+    Genera un CSV con los turnos confirmados entre dos fechas.
+    Reutiliza la función de paginación existente.
+    Devuelve el contenido CSV como texto.
+    """
+    try:
+        # Reutilizamos tu función de CRUD existente
+        datos = get_turnos_confirmados_desde_hasta(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            db=db,
+            pag=pag,
+            por_pag=por_pag      # Traer todos sin paginar
+        )
+
+        turnos = datos["turnos"]  # Lista de diccionarios
+
+        # Si no hay turnos → devolver None
+        if not turnos:
+            return None
+
+        # Armar filas para CSV
+        filas = []
+        for t in turnos:
+            persona = t["persona"]
+            filas.append({
+                "nombre": persona["nombre"],
+                "dni": persona["dni"],
+                "telefono": persona["telefono"],
+                "habilitado": persona["habilitado"],
+                "turno_id": t["id"],
+                "fecha": t["fecha"],
+                "hora": t["hora"],
+                "estado": t["estado"]
+            })
+
+        # Crear DataFrame
+        df = pd.DataFrame(filas)
+
+        # Convertir a CSV en memoria
+        buffer = StringIO()
+        df.to_csv(buffer, index=False, sep=";")
+        buffer.seek(0)
+
+        return buffer
+
+    except SQLAlchemyError as e:
+        raise Exception(f"Error de base de datos al generar CSV de turnos confirmados: {e}")
+    except Exception as e:
+        raise Exception(f"Error inesperado al generar CSV de turnos confirmados: {e}")
 
 
 
