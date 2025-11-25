@@ -382,6 +382,8 @@ def get_reporte_turnos_confirmados_por_fecha(fecha_desde: date, fecha_hasta: dat
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado: {excepcion}")
 
 
+# ============ ENDPOINTS DE REPORTES GENERANDO CSV ============
+
 @app.get("/reportes/csv/turnos-cancelados")
 def csv_turnos_cancelados(min: int = 5, db: Session = Depends(get_db)):
     try:
@@ -428,7 +430,7 @@ def generar_csv_turnos_confirmados(
         # Llamar al CRUD que genera el CSV
         buffer = crudTurno.generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag)
 
-        if not buffer:
+        if buffer is None:
             raise HTTPException(status_code=204)
 
         # Respuesta como archivo descargable
@@ -437,6 +439,34 @@ def generar_csv_turnos_confirmados(
             media_type="text/csv",
             headers={
                 "Content-Disposition": "attachment; filename=turnos_confirmados.csv"
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error inesperado: {str(e)}"
+        )
+    
+@app.get("/reportes/csv/estado-personas")
+def generar_csv_estado_personas(
+    estado: bool = Query(...,description="Indica si listar personas habilitadas (true) o no habilitadas (false)"),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Llamar al CRUD
+        buffer = crud.generar_csv_estado_personas(db, estado)
+
+        if buffer is None:
+            raise HTTPException(status_code=204)
+
+        return StreamingResponse(
+            buffer,
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": "attachment; filename=estado_personas.csv"
             }
         )
 
