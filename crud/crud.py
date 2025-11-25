@@ -3,6 +3,8 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy import func, desc, asc
 import models.models as models, schemas.schemas as schemas
 import math
+import pandas as pd
+from io import StringIO
 
 
 def calcular_edad(fecha_nacimiento):
@@ -197,3 +199,48 @@ def get_personas_filtered(
         raise Exception(f"Error al consultar personas filtradas: {e}")
     except ValueError as e:
         raise Exception(f"Error en filtros de búsqueda: {e}")
+
+
+def generar_csv_estado_personas(db: Session, estado: bool):
+    """
+    Genera un archivo CSV con las personas habilitadas o no habilitadas.
+    Reutiliza la consulta existente del CRUD.
+    Devuelve el texto CSV para ser descargado.
+    """
+    try:
+        # Llamar al CRUD existente (ajustá el nombre si el tuyo es diferente)
+        personas = get_personas_habilitadas_o_deshabilitadas(estado, db)
+
+        if not personas:
+            return None   # Para que el endpoint devuelva 204
+
+        filas = []
+        for p in personas:
+            filas.append({
+                "id": p.id,
+                "nombre": p.nombre,
+                "email": p.email,
+                "dni": p.dni,
+                "telefono": p.telefono,
+                "fecha_nacimiento": p.fecha_nacimiento.strftime("%Y-%m-%d"),
+                "habilitado": p.habilitado,
+                "edad": p.edad
+            })
+
+        # Crear DataFrame
+        df = pd.DataFrame(filas)
+
+        df["dni"] = df["dni"].astype(str)#cambio el tipo de dato a string
+        df.sort_values(by=["nombre"], inplace=True)#ordeno el df por los nombres de las personas
+        
+        # CSV en memoria
+        buffer = StringIO()
+        df.to_csv(buffer, index=False, sep=";")
+        buffer.seek(0)
+
+        return buffer
+
+    except SQLAlchemyError as e:
+        raise Exception(f"Error de base de datos al generar CSV de estado de personas: {e}")
+    except Exception as e:
+        raise Exception(f"Error inesperado al generar CSV de estado de personas: {e}")
