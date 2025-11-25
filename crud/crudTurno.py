@@ -549,6 +549,20 @@ def generar_csv_turnos_cancelados(db: Session, min_cancelados: int):
     # Crear DataFrame
     df = pd.DataFrame(filas)
 
+    #Cmbiar el formato para mas claridad
+    df["fecha"] = pd.to_datetime(df["fecha"]).dt.strftime("%d/%m/%Y")
+                #pd.todatetime convierte un tipo de dato cualquiera,que represente una fecha, a un tipo de dato de fecha de pandas
+                #.dt.strftime accede a los datos de la fecha que esta analizando y la convierte en strinf con strftime ("%d/%m/%y") formatea como mostrar este dato del tipo fecha
+    df["hora"] = df["hora"].astype(str).str[:5]
+                 #df["hora"] accede al atributo hora del dateframe astype(str) convierte cualquier dato a formato string
+                #la funcion .str[:5] agarra los primero 5 caracteres del string para acortarlo, 09:00 ahi habria 5
+    df["dni"] = df["dni"].astype(str)#cambio el tipo de dato a string
+
+    # Ordenar filas
+    df.sort_values(by=["nombre", "fecha", "hora"], inplace=True)
+    #ordena las filas por los parametros pasados inplace=True hace que se cambien correctamente los datos en la variable df
+
+
     # Convertir a CSV en memoria (sin crear archivos en disco)
     buffer = StringIO()
     df.to_csv(buffer, index=False, sep=";")
@@ -599,6 +613,32 @@ def generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag):
         # Crear DataFrame
         df = pd.DataFrame(filas)
 
+        #Cmbiar el formato para mas claridad
+        df["fecha"] = pd.to_datetime(df["fecha"]).dt.strftime("%d/%m/%Y")
+                    #pd.todatetime convierte un tipo de dato cualquiera,que represente una fecha, a un tipo de dato de fecha de pandas
+                    #.dt.strftime accede a los datos de la fecha que esta analizando y la convierte en strinf con strftime ("%d/%m/%y") formatea como mostrar este dato del tipo fecha
+        df["hora"] = df["hora"].astype(str).str[:5]
+                    #df["hora"] accede al atributo hora del dateframe astype(str) convierte cualquier dato a formato string
+                    #la funcion .str[:5] agarra los primero 5 caracteres del string para acortarlo, 09:00 ahi habria 5
+        df["dni"] = df["dni"].astype(str)#cambio el tipo de dato a string
+
+        # Ordenar filas
+        df.sort_values(by=["nombre", "fecha", "hora"], inplace=True)
+        #ordena las filas por los parametros pasados inplace=True hace que se cambien correctamente los datos en la variable df
+
+        #creo una fila mas para la metadata de la paginacion, para saber cuantos registros hay y en que pagina esta
+        #.loc ubica en que parte del df se va a ubicar la nueva linea, como le pongo hasta el tamanio del df, va a ser en la ultima posicion
+        df.loc[len(df)] = [
+            "",                     # nombre
+            "",                     # dni
+            "",                     # telefono
+            "",                     # habilitado
+            "METADATA:",             # turno_id 
+            f"pag={datos['metadata'].pag}/{datos['metadata'].total_pag}",   # fecha
+            f"por_pag={datos['metadata'].por_pag}",                         # hora
+            f"total_registros={datos['total_registros']}"                   # estado
+        ]
+
         # Convertir a CSV en memoria
         buffer = StringIO()
         df.to_csv(buffer, index=False, sep=";")
@@ -610,6 +650,7 @@ def generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag):
         raise Exception(f"Error de base de datos al generar CSV de turnos confirmados: {e}")
     except Exception as e:
         raise Exception(f"Error inesperado al generar CSV de turnos confirmados: {e}")
+
 
 
 
