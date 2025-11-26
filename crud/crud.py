@@ -4,6 +4,9 @@ from sqlalchemy import func, desc, asc
 import models.models as models, schemas.schemas as schemas
 import math
 from datetime import date
+import pandas as pd
+from io import StringIO
+
 
 
 def calcular_edad(fecha_nacimiento):
@@ -216,3 +219,41 @@ def get_personas_habilitadas_o_deshabilitadas(estado: bool, db: Session):
         personas_filtradas.append(schemas.PersonaOut(**persona_dict))
 
     return personas_filtradas
+
+def generar_csv_estado_personas(db: Session, estado: bool):
+    try:
+        # Llamar al CRUD existente
+        personas = get_personas_habilitadas_o_deshabilitadas(estado, db)
+
+        if not personas:
+            return None   # Para que el endpoint devuelva 204
+
+        filas_para_df = []
+        for p in personas:
+            filas_para_df.append({
+                "id": p.id,
+                "nombre": p.nombre,
+                "email": p.email,
+                "dni": p.dni,
+                "telefono": p.telefono,
+                "fecha_nacimiento": p.fecha_nacimiento.strftime("%Y-%m-%d"),
+                "habilitado": p.habilitado,
+                "edad": p.edad
+            })
+
+        # Crear DataFrame
+        df = pd.DataFrame(filas_para_df)
+
+        df["telefono"] = df["telefono"].astype(str).apply(lambda x: f"'{x}")#cambio el tipo de dato a string, y uso esa funcion lambda para poner una ' adelante de todos lo numeros, asi lo interpreta como string y muestra el numero completo
+        df["habilitado"] = df["habilitado"].map({True: "Si", False: "No"})#Reformo el estado habilitado para que se muestre si o no, para visualizar mas facil en el archivo csv.
+
+        df.sort_values(by=["id"], inplace=True)#ordeno el df por los id de las personas
+        
+        # CSV en memoria
+        csv_buffer = StringIO()#Se crea un buffer, un archivo en memoria que se puede enviar con fastapi para descargarlo
+        df.to_csv(csv_buffer, index=False, sep=";", encoding="utf-8-sig")#Gnero el archivo csv desde el DataFrame y lo guardo en el buffer
+        csv_buffer.seek(0)
+
+        return csv_buffer
+    except Exception as e:
+        raise Exception(f"Error inesperado al generar CSV de estado de personas: {e}")

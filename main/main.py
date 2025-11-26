@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import date, datetime
@@ -397,5 +398,122 @@ def get_turnos_cancelados_mes_actual_reformado(db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al generar el reporte: {str(e)}"
+        )
+    
+# ============ ENDPOINTS DE REPORTES GENERANDO CSV ============
+
+@app.get("/reportes/csv/turnos-cancelados")
+def generar_csv_turnos_cancelados(min: int = 5, db: Session = Depends(get_db)):
+    try:
+        csv_buffer = crudTurno.generar_csv_turnos_cancelados(db, min)#Obtengo el archivo en memoria para enviarlo y poder descargarlo
+        if csv_buffer is None:
+            raise HTTPException(status_code=204)
+
+        #Respuesta como archivo CSV, este tipo de respuesta permite enviar archivos guardados en memoria para que sean descargados
+        return StreamingResponse(
+            csv_buffer,#indica el archivo a descaragar
+            media_type="text/csv",#indica al navegador que tipo de archivo va a recibir
+            headers={
+                "Content-Disposition": "attachment; filename=turnos_cancelados.csv"
+            }#Le indica que se tiene que descargar y no mostrar, y a la vez con que nombre
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error interno al generar CSV: {str(e)}"
+        )
+    
+@app.get("/reportes/csv/turnos-confirmados")
+def generar_csv_turnos_confirmados(
+    fecha_desde: str = Query(..., description="Fecha inicio YYYY-MM-DD"),
+    fecha_hasta: str = Query(..., description="Fecha fin YYYY-MM-DD"),
+    pag:int = Query(1, ge=1, description="Número de página"),
+    por_pag:int = Query(5, ge=1, le=100, description="Registros por página"),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Validar formato de fecha
+        try:
+            fecha_desde = datetime.strptime(fecha_desde, "%Y-%m-%d").date()
+            fecha_hasta = datetime.strptime(fecha_hasta, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Formato de fecha inválido. Use YYYY-MM-DD."
+            )
+
+        # Llamar al CRUD que genera el CSV
+        csv_buffer = crudTurno.generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag)
+
+        if csv_buffer is None:
+            raise HTTPException(status_code=204)
+
+        #Respuesta como archivo CSV, este tipo de respuesta permite enviar archivos guardados en memoria para que sean descargados
+        return StreamingResponse(
+            csv_buffer,#indica el archivo a descaragar
+            media_type="text/csv",#indica al navegador que tipo de archivo va a recibir
+            headers={
+                "Content-Disposition": "attachment; filename=turnos_confirmados.csv"
+            }#Le indica que se tiene que descargar y no mostrar, y a la vez con que nombre
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error inesperado: {str(e)}"
+        )
+    
+@app.get("/reportes/csv/estado-personas")
+def generar_csv_estado_personas(
+    estado: bool = Query(...,description="Indica si listar personas habilitadas (true) o no habilitadas (false)"),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Llamar al CRUD
+        csv_buffer = crud.generar_csv_estado_personas(db, estado)
+
+        if csv_buffer is None:
+            raise HTTPException(status_code=204)
+
+        #Respuesta como archivo CSV, este tipo de respuesta permite enviar archivos guardados en memoria para que sean descargados
+        return StreamingResponse(
+            csv_buffer,#indica el archivo a descaragar
+            media_type="text/csv",#indica al navegador que tipo de archivo va a recibir
+            headers={
+                "Content-Disposition": "attachment; filename=estado_personas.csv"
+            }#Le indica que se tiene que descargar y no mostrar, y a la vez con que nombre
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error inesperado: {str(e)}"
+        )
+    
+
+@app.get("/reportes/pdf/turnos-cancelados-por-mes")
+def generar_pdf_turnos_cancelados_mes_actual(db: Session = Depends(get_db)):
+    try:
+        buffer = crudTurno.generar_pdf_turnos_cancelados_mes_actual(db)
+
+        return StreamingResponse(
+            buffer,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": "attachment; filename=turnos_cancelados_mes.pdf"
+            }
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al generar el PDF: {str(e)}"
         )
     

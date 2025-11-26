@@ -7,6 +7,9 @@ from crud.crud import calcular_edad
 from copy import copy
 from schemas.schemasTurno import settings
 import math
+import pandas as pd
+from io import StringIO
+
 
 """
 USO DEL ARCHIVO DE VARIABLES DE ENTORNO .ENV
@@ -664,3 +667,117 @@ def get_turnos_cancelados_mes_actual_reformado(db: Session):
         raise Exception(f"Error inesperado al generar el reporte de turnos cancelados: {e}")
 
 
+
+def generar_csv_turnos_cancelados(db: Session, min_cancelados: int):
+
+    #Reutilizo la funcion para traer los resultados del deporte en formato JSON (diccionario o lista de diccionarios)
+    lista_cancelados = get_personas_turnos_cancelados(db, min_cancelados)#retorna una lista de persona con sus turnos cancelados
+
+    #Si no hay resultados reotna vacio para mostrar el codigo 204
+    if not lista_cancelados:
+        return None
+
+    filas_para_df = []#genero una lista con los datos que se van a mostrar en el archivo csv.
+
+    for resultado in lista_cancelados:#cada resultado tiene a una persona con su lista de turnos cancelados 
+        persona = resultado["persona"]
+        contador = resultado["turnos_cancelados_contador"]
+
+        #Accedo a cada turno de cada persona que esta en la lista
+        for turno in resultado["turnos_cancelados_detalle"]:#para mostrar los datos correctamente en un unico archivo csv, por cada turno cancelado se van a mostrar los datos de la persona aunque se repitan
+            filas_para_df.append({
+                "nombre_persona": persona.nombre,
+                "dni": persona.dni,
+                "telefono": persona.telefono,
+                "habilitado": persona.habilitado,
+                "cant_cancelados": contador,
+                "turno_id": turno["id"],
+                "fecha": turno["fecha"],
+                "hora": turno["hora"]
+            })
+
+    # Crear DataFrame con pandas, para poder manipular los datos y generar el archivo csv
+    df = pd.DataFrame(filas_para_df)
+
+    #Cmbiar el formato para mas claridad
+    df["fecha"] = pd.to_datetime(df["fecha"]).dt.strftime("%d/%m/%Y")#Se accede al dato en formato date para reformatearlo y mostrarlo correctamente como string
+    df["hora"] = df["hora"].astype(str).str[:5]#Se accede al dato y se pasa a formto string para mostrarlo correctamente
+    df["dni"] = df["dni"].astype(str)#cambio el tipo de dato a string
+    df["habilitado"] = df["habilitado"].map({True: "Si", False: "No"})#Se cambia el formato para que se muestre con mas claridad el estado habilitado
+    df["telefono"] = df["telefono"].astype(str).apply(lambda x: f"'{x}")#cambio el tipo de dato a string, y uso esa funcion lambda para poner una ' adelante de todos lo numeros, asi lo interpreta como string y muestra el numero completo
+
+    # Ordenar filas
+    df.sort_values(by=["nombre_persona", "fecha", "hora"], inplace=True)
+
+    # Convertir a CSV en memoria, lo guarda en la RAM y no crea un archivo, se utiliza para luego envirlo con fastapi y que se pueda descargar.
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False, sep=";", encoding="utf-8-sig")#Se convierte el DataFrame en archivo csv y se guarda en el buffer.
+    csv_buffer.seek(0)#Vuelve a la linea 0 del buffer, para que se lea desde ahi.
+
+    return csv_buffer
+
+def generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag):
+    try:
+        datos = get_turnos_confirmados_desde_hasta(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            db=db,
+            pag=pag,
+            por_pag=por_pag   
+        )#Obtengo los datos para geerar el reporte en csv, me entrega un dicconario con una lista de turnos y la metadata de la paginacion
+
+        turnos = datos["turnos"]#Obtengo los turnos para trabajr con los datos que se tienen que mostrar en el archivo csv.
+
+        # Si no hay turnos devuelve None
+        if not turnos:
+            return None
+
+        # Armar filas para df.
+        filas_para_df = []
+        for t in turnos:
+            persona = t["persona"]
+            filas_para_df.append({
+                "nombre_persona": persona["nombre"],
+                "dni": persona["dni"],
+                "telefono": persona["telefono"],
+                "habilitado": persona["habilitado"],
+                "turno_id": t["id"],
+                "fecha": t["fecha"],
+                "hora": t["hora"],
+                "estado": t["estado"]
+            })
+
+        # Crear DataFrame
+        df = pd.DataFrame(filas_para_df)
+
+        #Cmbia el formato para mas claridad
+        df["fecha"] = pd.to_datetime(df["fecha"]).dt.strftime("%d/%m/%Y")#Se accede al dato en formato date para reformatearlo y mostrarlo correctamente como string
+        df["hora"] = df["hora"].astype(str).str[:5]#Se accede al dato y se pasa a formto string para mostrarlo correctamente
+        df["dni"] = df["dni"].astype(str)#cambio el tipo de dato a string
+        df["habilitado"] = df["habilitado"].map({True: "Si", False: "No"})#Se cambia el formato para que se muestre con mas claridad el estado habilitado
+        df["telefono"] = df["telefono"].astype(str).apply(lambda x: f"'{x}")#cambio el tipo de dato a string, y uso esa funcion lambda para poner una ' adelante de todos lo numeros, asi lo interpreta como string y muestra el numero completo
+
+        #Ordenar filas
+        df.sort_values(by=["nombre_persona", "fecha", "hora"], inplace=True)
+
+        #creo una fila mas para la metadata de la paginacion, para saber cuantos registros hay y en que pagina esta
+        #.loc ubica en que parte del df se va a ubicar la nueva linea, como le pongo hasta el tamanio del df, va a ser en la ultima posicion
+        df.loc[len(df)] = [
+            "",                     
+            "",                    
+            "",                    
+            "",#Dejo ls primeras columnas de la untima fila vacias porue no hay datos que mostrar.                     
+            "METADATA:",#Indico que la informacion pertenece a la metdata de la paginacion             
+            f"pag={datos['metadata'].pag}/{datos['metadata'].total_pag}",  
+            f"por_pag={datos['metadata'].por_pag}",                        
+            f"total_registros={datos['total_registros']}"                   
+        ]
+
+        # Convertir a CSV en memoria, lo guarda en la RAM y no crea un archivo, se utiliza para luego envirlo con fastapi y que se pueda descargar.
+        csv_buffer = StringIO()
+        df.to_csv(csv_buffer, index=False, sep=";", encoding="utf-8-sig")#Se convierte el DataFrame en archivo csv y se guarda en el buffer.
+        csv_buffer.seek(0)#Vuelve a la linea 0 del buffer, para que se lea desde ahi.
+
+        return csv_buffer
+    except Exception as e:
+        raise Exception(f"Error inesperado al generar CSV de turnos confirmados: {e}")
