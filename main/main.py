@@ -496,24 +496,3 @@ def generar_csv_estado_personas(
             status_code=500,
             detail=f"Error inesperado: {str(e)}"
         )
-    
-
-@app.get("/reportes/pdf/turnos-cancelados-por-mes")
-def generar_pdf_turnos_cancelados_mes_actual(db: Session = Depends(get_db)):
-    try:
-        buffer = crudTurno.generar_pdf_turnos_cancelados_mes_actual(db)
-
-        return StreamingResponse(
-            buffer,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": "attachment; filename=turnos_cancelados_mes.pdf"
-            }
-        )
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al generar el PDF: {str(e)}"
-        )
-    
