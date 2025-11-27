@@ -444,10 +444,8 @@ def generar_csv_turnos_confirmados(
                 status_code=400,
                 detail="Formato de fecha inválido. Use YYYY-MM-DD."
             )
-
         # Llamar al CRUD que genera el CSV
         csv_buffer = crudTurno.generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag)
-
         if csv_buffer is None:
             raise HTTPException(status_code=204)
 
@@ -486,13 +484,61 @@ def generar_csv_estado_personas(
             media_type="text/csv",#indica al navegador que tipo de archivo va a recibir
             headers={
                 "Content-Disposition": "attachment; filename=estado_personas.csv"
-            }#Le indica que se tiene que descargar y no mostrar, y a la vez con que nombre
+            }#Le indica al navegador que se tiene que descargar y no mostrar, y a la vez con que nombre.
         )
-
+        
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Error inesperado: {str(e)}"
+        )
+    
+@app.get("/reportes/csv/turnos-cancelados-por-mes-reformado", response_class=StreamingResponse)
+def generar_csv_turnos_cancelados_reformado(db: Session = Depends(get_db)):
+    try:
+        csv_buffer = crudTurno.generar_csv_turnos_cancelados_reformado(db)
+        if csv_buffer is None:
+            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, 
+                                detail="No hay turnos cancelados este mes para generar el CSV.")
+        return StreamingResponse(
+            csv_buffer,
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": "attachment; filename=reporte_cancelados_mes.csv"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el CSV: {e}"
+        )
+    
+
+# ============ ENDPOINTS DE REPORTES GENERANDO PDF ============
+
+@app.get("/reportes/pdf/turnos-cancelados-por-mes-reformado", response_class=StreamingResponse)
+def descargar_pdf_turnos_cancelados(db: Session = Depends(get_db)):
+    try:
+        pdf_buffer = crudTurno.generar_pdf_turnos_cancelados_mes_actual_reformado(db)
+        if pdf_buffer is None:
+            # 204 si no hay datos
+            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="No hay turnos cancelados este mes")
+
+        return StreamingResponse(
+            pdf_buffer,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": "attachment; filename=turnos_cancelados_mes.pdf"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el PDF: {e}"
         )

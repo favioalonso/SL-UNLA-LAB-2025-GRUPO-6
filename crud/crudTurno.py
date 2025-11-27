@@ -7,8 +7,20 @@ from crud.crud import calcular_edad
 from copy import copy
 from schemas.schemasTurno import settings
 import math
+from decimal import Decimal
+
+#Imports para generar archivosde reportes
 import pandas as pd
-from io import StringIO
+from io import StringIO, BytesIO
+
+#Imports para borb version=2.1.22
+from borb.pdf import Document, Page, PDF
+from borb.pdf.canvas.layout.page_layout.multi_column_layout import SingleColumnLayout
+from borb.pdf.canvas.layout.text.paragraph import Paragraph, Alignment
+from borb.pdf.canvas.layout.horizontal_rule import HorizontalRule
+from borb.pdf.canvas.layout.table.fixed_column_width_table import FixedColumnWidthTable
+from borb.pdf.canvas.color.color import HexColor
+from borb.pdf.canvas.layout.table.table_util import TableCell
 
 
 """
@@ -635,6 +647,7 @@ def get_turnos_cancelados_mes_actual_reformado(db: Session):
                         "id": persona.id,
                         "nombre": persona.nombre,
                         "dni": persona.dni,
+                        "telefono":persona.telefono,
                         "cantidad_de_cancelados": 0
                     },
                     "turnos_cancelados": []
@@ -668,8 +681,9 @@ def get_turnos_cancelados_mes_actual_reformado(db: Session):
 
 
 
-def generar_csv_turnos_cancelados(db: Session, min_cancelados: int):
+#=============== FUNCIONES PARA GENERAR ARCHIVOS CSV DE REPORTE ===================
 
+def generar_csv_turnos_cancelados(db: Session, min_cancelados: int):
     #Reutilizo la funcion para traer los resultados del deporte en formato JSON (diccionario o lista de diccionarios)
     lista_cancelados = get_personas_turnos_cancelados(db, min_cancelados)#retorna una lista de persona con sus turnos cancelados
 
@@ -678,7 +692,6 @@ def generar_csv_turnos_cancelados(db: Session, min_cancelados: int):
         return None
 
     filas_para_df = []#genero una lista con los datos que se van a mostrar en el archivo csv.
-
     for resultado in lista_cancelados:#cada resultado tiene a una persona con su lista de turnos cancelados 
         persona = resultado["persona"]
         contador = resultado["turnos_cancelados_contador"]
@@ -727,11 +740,9 @@ def generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag):
         )#Obtengo los datos para geerar el reporte en csv, me entrega un dicconario con una lista de turnos y la metadata de la paginacion
 
         turnos = datos["turnos"]#Obtengo los turnos para trabajr con los datos que se tienen que mostrar en el archivo csv.
-
         # Si no hay turnos devuelve None
         if not turnos:
             return None
-
         # Armar filas para df.
         filas_para_df = []
         for t in turnos:
@@ -749,14 +760,12 @@ def generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag):
 
         # Crear DataFrame
         df = pd.DataFrame(filas_para_df)
-
         #Cmbia el formato para mas claridad
         df["fecha"] = pd.to_datetime(df["fecha"]).dt.strftime("%d/%m/%Y")#Se accede al dato en formato date para reformatearlo y mostrarlo correctamente como string
         df["hora"] = df["hora"].astype(str).str[:5]#Se accede al dato y se pasa a formto string para mostrarlo correctamente
         df["dni"] = df["dni"].astype(str)#cambio el tipo de dato a string
         df["habilitado"] = df["habilitado"].map({True: "Si", False: "No"})#Se cambia el formato para que se muestre con mas claridad el estado habilitado
         df["telefono"] = df["telefono"].astype(str).apply(lambda x: f"'{x}")#cambio el tipo de dato a string, y uso esa funcion lambda para poner una ' adelante de todos lo numeros, asi lo interpreta como string y muestra el numero completo
-
         #Ordenar filas
         df.sort_values(by=["nombre_persona", "fecha", "hora"], inplace=True)
 
@@ -766,7 +775,7 @@ def generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag):
             "",                     
             "",                    
             "",                    
-            "",#Dejo ls primeras columnas de la untima fila vacias porue no hay datos que mostrar.                     
+            "",#Dejo las primeras columnas de la untima fila vacias porue no hay datos que mostrar.                     
             "METADATA:",#Indico que la informacion pertenece a la metdata de la paginacion             
             f"pag={datos['metadata'].pag}/{datos['metadata'].total_pag}",  
             f"por_pag={datos['metadata'].por_pag}",                        
@@ -777,7 +786,117 @@ def generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag):
         csv_buffer = StringIO()
         df.to_csv(csv_buffer, index=False, sep=";", encoding="utf-8-sig")#Se convierte el DataFrame en archivo csv y se guarda en el buffer.
         csv_buffer.seek(0)#Vuelve a la linea 0 del buffer, para que se lea desde ahi.
-
         return csv_buffer
     except Exception as e:
         raise Exception(f"Error inesperado al generar CSV de turnos confirmados: {e}")
+    
+
+def generar_csv_turnos_cancelados_reformado(db: Session):
+    try:
+        datos = get_turnos_cancelados_mes_actual_reformado(db)
+        if not datos or not datos.get("detalle_por_persona"):
+            return None
+
+        filas_csv = []
+        for datos_persona in datos["detalle_por_persona"]:
+            persona = datos_persona["persona"]
+            turnos = datos_persona["turnos_cancelados"]
+            for turno in turnos:
+                # Creamos una fila de CSV con todos los detalles
+                filas_csv.append({
+                    "persona_id": persona["id"],
+                    "nombre_persona": persona["nombre"],
+                    "dni": persona["dni"],
+                    "total_cancelados_persona": persona["cantidad_de_cancelados"],
+                    "turno_id": turno["id"],
+                    "fecha_turno": turno["fecha"],
+                    "hora_turno": turno["hora"],
+                    "estado_turno": turno["estado"]
+                })
+
+        df = pd.DataFrame(filas_csv)
+
+        df["fecha_turno"] = pd.to_datetime(df["fecha_turno"]).dt.strftime("%d/%m/%Y")#Se accede al dato en formato date para reformatearlo y mostrarlo correctamente como string
+        df["hora_turno"] = df["hora_turno"].astype(str).str[:5]#Se accede al dato y se pasa a formto string para mostrarlo correctamente
+        df["dni"] = df["dni"].astype(str)#cambio el tipo de dato a string
+        #Ordenar filas
+        df.sort_values(by=["nombre_persona", "fecha_turno", "hora_turno"], inplace=True)
+
+        csv_buffer = StringIO()
+        df.to_csv(csv_buffer, index=False, sep=";", encoding="utf-8-sig")
+        csv_buffer.seek(0)
+        return csv_buffer
+    except Exception as e:
+        raise Exception(f"Error inesperado al generar PDF de turnos cancelados: {e}")
+
+    
+
+#=============== FUNCIONES PARA GENERAR ARCHIVOS PDF DE REPORTE ===================
+
+def generar_pdf_turnos_cancelados_mes_actual_reformado(db):
+    try:
+        # Reutiliza tu función que devuelve la estructura por persona
+        datos = get_turnos_cancelados_mes_actual_reformado(db)
+
+        if not datos or not datos.get("detalle_por_persona"):
+            return None
+        # Crear documento
+        pdf = Document()
+        page = Page()#crea una pagina
+        pdf.add_page(page)
+        layout = SingleColumnLayout(page)#Permite agregar contenido y tiene ajustes automaticos sobre donde ubicar cada cosa que se agregue a la pagina, es un controlador de la misma.
+        # Se le agrega un titulo al documento
+        layout.add(
+            Paragraph(
+                f"Reporte de Turnos Cancelados — {datos['mes'].capitalize()} {datos['anio']}",
+                font="Helvetica-Bold", #El tipo de etra
+                font_size=16, #Tamanio de las letras
+                margin_bottom=0, #Minima separacion con el siguiente contenido
+                horizontal_alignment=Alignment.CENTERED #Se indica que se centre
+            )
+        )
+        layout.add(Paragraph(f"Total de turnos cancelados: {datos['cantidad_total']}", margin_top=0, margin_bottom=0, font="Helvetica-Bold", font_size=12))
+        layout.add(Paragraph(f"Cantidad de personas con turnos cancelados: {len(datos['detalle_por_persona'])}", margin_top=0, font="Helvetica-Bold", font_size=12))
+        layout.add(HorizontalRule()) #Agrega una linea horizontal
+
+        # Recorrer personas
+        for fila in datos["detalle_por_persona"]:
+            persona = fila["persona"]
+            turnos = fila["turnos_cancelados"]
+            
+            layout.add(
+                Paragraph(
+                    f"Persona: {persona['nombre']} (DNI {persona['dni']}), ID: {persona['id']}, contacto: {persona['telefono']}", #Agrego los datos de cada persona mientras se recorre
+                    font="Helvetica-Bold",
+                    margin_bottom=0
+                )
+            )
+            layout.add(Paragraph(f"Cantidad de turnos cancelados: {persona['cantidad_de_cancelados']}", margin_top=0, margin_bottom=0))
+
+            #Creo una tabla con los turnos cancelados de cada persona. Una tabla por turnos correspondientes a cada persona.
+            total_filas = 1 + len(turnos) #La cantidad de turnos cancelados de cada persona mas la fila de los encabezados.
+            encabezados = ["ID Turno", "Fecha", "Hora", "Estado"] #Los encaezados que quiero mostrar de los turnos de cada persona.
+            tamanio_columnas = [Decimal(50),Decimal(80), Decimal(40), Decimal(80)] #Indico el tamaño de las celdas para cada atributo.
+            table = FixedColumnWidthTable(number_of_rows=total_filas, number_of_columns=4, column_widths=tamanio_columnas)#Genero la tabla, indicando sus atributos.
+
+            for encabezado in encabezados:
+                table.add(TableCell(Paragraph(encabezado, font="Helvetica-Bold", font_size=11, horizontal_alignment=Alignment.CENTERED), 
+                                    background_color= HexColor("#3465A4"))) #Agrego contenido a cada celda de la primera fila. Los datos y su formato y un color de fondo.
+                
+            for t in turnos:
+                table.add(TableCell (Paragraph(str(t["id"]), horizontal_alignment=Alignment.CENTERED), background_color= HexColor("#E6F0FF")))
+                table.add(TableCell (Paragraph(t["fecha"], horizontal_alignment=Alignment.CENTERED), background_color= HexColor("#E6F0FF")))
+                table.add(TableCell (Paragraph(t["hora"], horizontal_alignment=Alignment.CENTERED), background_color= HexColor("#E6F0FF")))
+                table.add(TableCell (Paragraph(t["estado"], horizontal_alignment=Alignment.CENTERED), background_color= HexColor("#D9534F")))#Agrego los datos de cada turno cancelado, con un color de fondo en cada celda.
+
+            table.set_padding_on_all_cells(Decimal(3), Decimal(3), Decimal(2), Decimal(3)) #Agrego separacion entre el contenido y todos los bordes.
+            layout.add(table) #Agrego la tabla a la pagina.
+            layout.add(Paragraph(" ", margin_top=0, margin_bottom=0))
+            layout.add(HorizontalRule())
+
+        buffer = BytesIO() #Genero un archivo en memoria, donde se va a guardar el pdf temporal que se enviara con fastapi en formato de bytes.
+        PDF.dumps(buffer, pdf) #Genero el pdf y lo guardo en el buffer.
+        buffer.seek(0) #Indico que se vuelva al principio del archivo para leerlo correctamente.
+        return buffer
+    except Exception as e:
+        raise Exception(f"Error inesperado al generar PDF de turnos cancelados: {e}")
