@@ -569,32 +569,42 @@ def get_pdf_turnos_por_fecha(
 
 
 @app.get("/reportes/pdf/turnos-cancelados-por-mes")
-def get_pdf_turnos_cancelados_mes(db: Session = Depends(get_db)):
+def get_pdf_turnos_cancelados_mes(
+    mes: int = Query(None, description="Mes (1-12). Si no se proporciona, usa el mes actual"),
+    anio: int = Query(None, description="Año (YYYY). Si no se proporciona, usa el año actual"),
+    db: Session = Depends(get_db)
+):
     """
-    Genera un PDF con el reporte de turnos cancelados del mes actual.
+    Genera un PDF con el reporte de turnos cancelados para un mes y año específicos.
+    Si no se proporcionan mes/año, usa el mes/año actual.
+    Si no hay turnos cancelados, genera un PDF con un mensaje informativo.
     """
     try:
         # Obtener datos del reporte
-        reporte_data = crudTurno.get_turnos_cancelados_mes_actual_reformado(db)
+        reporte_data = crudTurno.get_turnos_cancelados_por_mes(db, mes, anio)
 
-        if not reporte_data or reporte_data.get('total_cancelados', 0) == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No se encontraron turnos cancelados para el mes actual"
-            )
-
-        # Generar PDF
+        # Generar PDF (incluso si no hay datos)
         pdf_bytes = pdf_generator.generar_pdf_turnos_cancelados_mes(reporte_data)
+
+        # Nombre del archivo
+        mes_num = reporte_data.get('mes_numero', mes or 1)
+        anio_num = reporte_data.get('anio', anio or 2025)
+        filename = f"turnos_cancelados_{anio_num}_{mes_num:02d}.pdf"
 
         # Retornar PDF
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={"Content-Disposition": "attachment; filename=turnos_cancelados_mes.pdf"}
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
 
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -650,4 +660,3 @@ def get_pdf_turnos_por_persona(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al generar el PDF: {str(e)}"
         )
->>>>>>> d371e41 (Agregar endpoints PDF para reportes de turnos)

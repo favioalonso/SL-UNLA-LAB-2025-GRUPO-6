@@ -79,11 +79,11 @@ def generar_pdf_turnos_por_fecha(fecha: str, cantidad: int, turnos: list) -> byt
 
 def generar_pdf_turnos_cancelados_mes(reporte_data: dict) -> bytes:
     """
-    Genera un PDF con el reporte de turnos cancelados del mes actual.
+    Genera un PDF con el reporte de turnos cancelados del mes especificado.
 
     Args:
         reporte_data: Diccionario con los datos del reporte
-                     Estructura esperada: {"mes": str, "total_cancelados": int, "personas": [...]}
+                     Estructura esperada: {"mes": str, "anio": int, "total_cancelados": int, "detalle_por_persona": [...]}
 
     Returns:
         bytes: Contenido del PDF generado
@@ -94,37 +94,47 @@ def generar_pdf_turnos_cancelados_mes(reporte_data: dict) -> bytes:
     layout = SingleColumnLayout(page)
 
     # Título
+    mes = reporte_data.get('mes', 'N/A')
+    anio = reporte_data.get('anio', 'N/A')
     layout.add(Paragraph(
-        "Reporte de Turnos Cancelados del Mes Actual",
+        f"Reporte de Turnos Cancelados - {mes} {anio}",
         font_size=Decimal(20),
         font_color=HexColor("#E74C3C")
     ))
 
-    layout.add(Paragraph(f"Mes: {reporte_data.get('mes', 'N/A')}", font_size=Decimal(14)))
-    layout.add(Paragraph(f"Total de turnos cancelados: {reporte_data.get('total_cancelados', 0)}", font_size=Decimal(12)))
+    layout.add(Paragraph(" "))
+    total = reporte_data.get('total_cancelados', 0)
+    layout.add(Paragraph(f"Total de turnos cancelados: {total}", font_size=Decimal(14)))
     layout.add(Paragraph(" "))
 
     # Tabla con personas y turnos cancelados
-    personas = reporte_data.get('personas', [])
+    detalle = reporte_data.get('detalle_por_persona', [])
 
-    if personas:
-        # Tabla con 3 columnas (sin apellido)
-        tabla = Table(number_of_rows=len(personas) + 1, number_of_columns=3)
+    if detalle and total > 0:
+        # Tabla con 4 columnas
+        tabla = Table(number_of_rows=len(detalle) + 1, number_of_columns=4)
 
         # Encabezados
         tabla.add(Paragraph("DNI", font_color=HexColor("#FFFFFF"), background_color=HexColor("#E74C3C")))
         tabla.add(Paragraph("Nombre", font_color=HexColor("#FFFFFF"), background_color=HexColor("#E74C3C")))
-        tabla.add(Paragraph("Turnos Cancelados", font_color=HexColor("#FFFFFF"), background_color=HexColor("#E74C3C")))
+        tabla.add(Paragraph("Teléfono", font_color=HexColor("#FFFFFF"), background_color=HexColor("#E74C3C")))
+        tabla.add(Paragraph("Cant. Cancelados", font_color=HexColor("#FFFFFF"), background_color=HexColor("#E74C3C")))
 
         # Datos
-        for persona in personas:
-            tabla.add(Paragraph(persona.get('dni', 'N/A')))
-            tabla.add(Paragraph(persona.get('nombre', 'N/A')))
-            tabla.add(Paragraph(str(persona.get('cantidad_cancelados', 0))))
+        for item in detalle:
+            persona_info = item.get('persona', {})
+            tabla.add(Paragraph(persona_info.get('dni', 'N/A')))
+            tabla.add(Paragraph(persona_info.get('nombre', 'N/A')))
+            tabla.add(Paragraph(persona_info.get('telefono', 'N/A')))
+            tabla.add(Paragraph(str(persona_info.get('cantidad_de_cancelados', 0))))
 
         layout.add(tabla)
     else:
-        layout.add(Paragraph("No se encontraron turnos cancelados para este mes.", font_size=Decimal(12)))
+        layout.add(Paragraph(
+            f"No se encontraron turnos cancelados para {mes} de {anio}.",
+            font_size=Decimal(12),
+            font_color=HexColor("#7F8C8D")
+        ))
 
     # Generar bytes del PDF
     buffer = BytesIO()

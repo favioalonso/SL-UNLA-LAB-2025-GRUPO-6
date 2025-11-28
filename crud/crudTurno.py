@@ -680,6 +680,84 @@ def get_turnos_cancelados_mes_actual_reformado(db: Session):
         raise Exception(f"Error inesperado al generar el reporte de turnos cancelados: {e}")
 
 
+def get_turnos_cancelados_por_mes(db: Session, mes: int = None, anio: int = None):
+    """
+    Obtiene turnos cancelados para un mes y año específicos.
+    Si no se proporcionan mes/año, usa el mes/año actual.
+    """
+    try:
+        # Si no se proporcionan mes/año, usar actual
+        if mes is None or anio is None:
+            fecha_actual = datetime.now()
+            anio = anio or fecha_actual.year
+            mes = mes or fecha_actual.month
+
+        # Validar mes
+        if mes < 1 or mes > 12:
+            raise ValueError("El mes debe estar entre 1 y 12")
+
+        # Validar año
+        if anio < 1900 or anio > 2100:
+            raise ValueError("El año debe estar entre 1900 y 2100")
+
+        # Obtener todos los turnos cancelados del mes especificado
+        turnos_cancelados = (
+            db.query(models.Turno)
+            .options(joinedload(models.Turno.persona))
+            .filter(
+                func.strftime("%Y", models.Turno.fecha) == str(anio),
+                func.strftime("%m", models.Turno.fecha) == f"{mes:02d}",
+                func.lower(models.Turno.estado) == diccionario_estados.get("ESTADO_CANCELADO").lower()
+            )
+            .order_by(models.Turno.persona_id, models.Turno.fecha)
+            .all()
+        )
+
+        # Agrupar turnos por persona
+        personas_dict = {}
+        for turno in turnos_cancelados:
+            persona = turno.persona
+            if persona.id not in personas_dict:
+                personas_dict[persona.id] = {
+                    "persona": {
+                        "id": persona.id,
+                        "nombre": persona.nombre,
+                        "dni": persona.dni,
+                        "telefono": persona.telefono,
+                        "cantidad_de_cancelados": 0
+                    },
+                    "turnos_cancelados": []
+                }
+
+            personas_dict[persona.id]["turnos_cancelados"].append({
+                "id": turno.id,
+                "fecha": turno.fecha.strftime("%Y-%m-%d"),
+                "hora": turno.hora.strftime("%H:%M"),
+                "estado": turno.estado
+            })
+            personas_dict[persona.id]["persona"]["cantidad_de_cancelados"] += 1
+
+        # Convertir el diccionario a lista
+        detalle_por_persona = list(personas_dict.values())
+
+        # Calcular cantidad total de turnos cancelados
+        cantidad_total = len(turnos_cancelados)
+
+        return {
+            "anio": anio,
+            "mes": meses_nombres[mes - 1],
+            "mes_numero": mes,
+            "total_cancelados": cantidad_total,
+            "detalle_por_persona": detalle_por_persona
+        }
+
+    except ValueError as e:
+        raise ValueError(str(e))
+    except SQLAlchemyError as e:
+        raise Exception(f"Error en la base de datos al generar el reporte de turnos cancelados: {e}")
+    except Exception as e:
+        raise Exception(f"Error inesperado al generar el reporte de turnos cancelados: {e}")
+
 
 #=============== FUNCIONES PARA GENERAR ARCHIVOS CSV DE REPORTE ===================
 
