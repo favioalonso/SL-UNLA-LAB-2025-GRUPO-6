@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import date, datetime
@@ -14,6 +14,7 @@ import crud.crudTurno as crudTurno
 from database.database import SessionLocal, engine
 from database.seed_data import create_sample_data
 from crud.crudTurno import DatabaseResourceNotFound
+import services.pdf_service as pdf_generator  # PDF generation service
 
 # Crear tablas
 models.Base.metadata.create_all(bind=engine)
@@ -399,7 +400,7 @@ def get_turnos_cancelados_mes_actual_reformado(db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al generar el reporte: {str(e)}"
         )
-    
+
 # ============ ENDPOINTS DE REPORTES GENERANDO CSV ============
 
 @app.get("/reportes/csv/turnos-cancelados")
@@ -425,7 +426,7 @@ def generar_csv_turnos_cancelados(min: int = 5, db: Session = Depends(get_db)):
             status_code=500,
             detail=f"Error interno al generar CSV: {str(e)}"
         )
-    
+
 @app.get("/reportes/csv/turnos-confirmados")
 def generar_csv_turnos_confirmados(
     fecha_desde: str = Query(..., description="Fecha inicio YYYY-MM-DD"),
@@ -465,7 +466,7 @@ def generar_csv_turnos_confirmados(
             status_code=500,
             detail=f"Error inesperado: {str(e)}"
         )
-    
+
 @app.get("/reportes/csv/estado-personas")
 def generar_csv_estado_personas(
     estado: bool = Query(...,description="Indica si listar personas habilitadas (true) o no habilitadas (false)"),
@@ -486,7 +487,7 @@ def generar_csv_estado_personas(
                 "Content-Disposition": "attachment; filename=estado_personas.csv"
             }#Le indica al navegador que se tiene que descargar y no mostrar, y a la vez con que nombre.
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -494,13 +495,13 @@ def generar_csv_estado_personas(
             status_code=500,
             detail=f"Error inesperado: {str(e)}"
         )
-    
+
 @app.get("/reportes/csv/turnos-cancelados-por-mes-reformado", response_class=StreamingResponse)
 def generar_csv_turnos_cancelados_reformado(db: Session = Depends(get_db)):
     try:
         csv_buffer = crudTurno.generar_csv_turnos_cancelados_reformado(db)
         if csv_buffer is None:
-            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, 
+            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT,
                                 detail="No hay turnos cancelados este mes para generar el CSV.")
         return StreamingResponse(
             csv_buffer,
@@ -516,29 +517,137 @@ def generar_csv_turnos_cancelados_reformado(db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al generar el CSV: {e}"
         )
-    
 
-# ============ ENDPOINTS DE REPORTES GENERANDO PDF ============
 
-@app.get("/reportes/pdf/turnos-cancelados-por-mes-reformado", response_class=StreamingResponse)
-def descargar_pdf_turnos_cancelados(db: Session = Depends(get_db)):
+# ========== ENDPOINTS DE REPORTES EN PDF ==========
+
+@app.get("/reportes/pdf/turnos-por-fecha")
+def get_pdf_turnos_por_fecha(
+    fecha: str = Query(...,
+        description="Fecha del día en formato YYYY-MM-DD",
+        example="2025-10-05"
+    ), db: Session = Depends(get_db)):
+    """
+    Genera un PDF con el reporte de turnos para una fecha específica.
+    """
     try:
-        pdf_buffer = crudTurno.generar_pdf_turnos_cancelados_mes_actual_reformado(crudTurno.get_turnos_cancelados_mes_actual_reformado(db))
-        if pdf_buffer is None:
-            # 204 si no hay datos
-            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="No hay turnos cancelados este mes")
+        # Validar formato de fecha
+        fecha_valida = datetime.strptime(fecha, "%Y-%m-%d").date()
 
-        return StreamingResponse(
-            pdf_buffer,
+        # Obtener datos del reporte
+        turnos = crudTurno.get_turnos_por_fecha(db, fecha_valida)
+        if not turnos:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No se encontraron turnos para la fecha {fecha}"
+            )
+
+        cantidad_total_turnos = sum(len(persona["turnos"]) for persona in turnos)
+
+        # Generar PDF
+        pdf_bytes = pdf_generator.generar_pdf_turnos_por_fecha(fecha, cantidad_total_turnos, turnos)
+
+        # Retornar PDF
+        return Response(
+            content=pdf_bytes,
             media_type="application/pdf",
-            headers={
-                "Content-Disposition": "attachment; filename=turnos_cancelados_mes.pdf"
-            }
+            headers={"Content-Disposition": f"attachment; filename=turnos_fecha_{fecha}.pdf"}
+        )
+
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato de fecha inválido o fecha inexistente. Use el formato YYYY-MM-DD."
         )
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al generar el PDF: {e}"
+            detail=f"Error al generar el PDF: {str(e)}"
         )
+
+
+@app.get("/reportes/pdf/turnos-cancelados-por-mes")
+def get_pdf_turnos_cancelados_mes(db: Session = Depends(get_db)):
+    """
+    Genera un PDF con el reporte de turnos cancelados del mes actual.
+    """
+    try:
+        # Obtener datos del reporte
+        reporte_data = crudTurno.get_turnos_cancelados_mes_actual_reformado(db)
+
+        if not reporte_data or reporte_data.get('total_cancelados', 0) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se encontraron turnos cancelados para el mes actual"
+            )
+
+        # Generar PDF
+        pdf_bytes = pdf_generator.generar_pdf_turnos_cancelados_mes(reporte_data)
+
+        # Retornar PDF
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=turnos_cancelados_mes.pdf"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el PDF: {str(e)}"
+        )
+
+
+@app.get("/reportes/pdf/turnos-por-persona")
+def get_pdf_turnos_por_persona(
+    dni: str = Query(
+        description="DNI de la persona (8 dígitos)",
+        min_length=8,
+        max_length=8,
+        regex=r"\d{8}"
+    ),
+    db: Session = Depends(get_db)):
+    """
+    Genera un PDF con el reporte de turnos de una persona específica.
+    """
+    try:
+        # Obtener datos del reporte
+        resultado = crudTurno.get_turnos_por_dni(db, dni)
+
+        if resultado is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No se encontró una persona con el DNI {dni}"
+            )
+
+        # Verificar que tenga turnos
+        if resultado["total_turnos"] == 0:
+            raise HTTPException(
+                status_code=404,
+                detail=f"La persona con DNI {dni} existe pero no tiene turnos registrados."
+            )
+
+        # Generar PDF
+        pdf_bytes = pdf_generator.generar_pdf_turnos_por_persona(resultado)
+
+        # Retornar PDF
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=turnos_persona_{dni}.pdf"}
+        )
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el PDF: {str(e)}"
+        )
+>>>>>>> d371e41 (Agregar endpoints PDF para reportes de turnos)
