@@ -523,7 +523,7 @@ def generar_csv_turnos_cancelados_reformado(db: Session = Depends(get_db)):
 @app.get("/reportes/pdf/turnos-cancelados-por-mes-reformado", response_class=StreamingResponse)
 def descargar_pdf_turnos_cancelados(db: Session = Depends(get_db)):
     try:
-        pdf_buffer = crudTurno.generar_pdf_turnos_cancelados_mes_actual_reformado(db)
+        pdf_buffer = crudTurno.generar_pdf_turnos_cancelados_mes_actual_reformado(crudTurno.get_turnos_cancelados_mes_actual_reformado(db))
         if pdf_buffer is None:
             # 204 si no hay datos
             raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="No hay turnos cancelados este mes")

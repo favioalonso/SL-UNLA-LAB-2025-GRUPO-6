@@ -717,12 +717,12 @@ def generar_csv_turnos_cancelados(db: Session, min_cancelados: int):
     df["hora"] = df["hora"].astype(str).str[:5]#Se accede al dato y se pasa a formto string para mostrarlo correctamente
     df["dni"] = df["dni"].astype(str)#cambio el tipo de dato a string
     df["habilitado"] = df["habilitado"].map({True: "Si", False: "No"})#Se cambia el formato para que se muestre con mas claridad el estado habilitado
-    df["telefono"] = df["telefono"].astype(str).apply(lambda x: f"'{x}")#cambio el tipo de dato a string, y uso esa funcion lambda para poner una ' adelante de todos lo numeros, asi lo interpreta como string y muestra el numero completo
+    df["telefono"] = df["telefono"].astype(str).apply(lambda x: f"'{x}")#cambio el tipo de dato a string, y uso funcion lambda para poner una ' adelante de todos lo numeros, asi lo interpreta como string y muestra el numero completo
 
     # Ordenar filas
     df.sort_values(by=["nombre_persona", "fecha", "hora"], inplace=True)
 
-    # Convertir a CSV en memoria, lo guarda en la RAM y no crea un archivo, se utiliza para luego envirlo con fastapi y que se pueda descargar.
+    # Convertir a CSV en memoria, lo guarda en la RAM y no crea un archivo, se utiliza para luego enviarlo con fastapi y que se pueda descargar.
     csv_buffer = StringIO()
     df.to_csv(csv_buffer, index=False, sep=";", encoding="utf-8-sig")#Se convierte el DataFrame en archivo csv y se guarda en el buffer.
     csv_buffer.seek(0)#Vuelve a la linea 0 del buffer, para que se lea desde ahi.
@@ -775,14 +775,14 @@ def generar_csv_turnos_confirmados(db, fecha_desde, fecha_hasta, pag, por_pag):
             "",                     
             "",                    
             "",                    
-            "",#Dejo las primeras columnas de la untima fila vacias porue no hay datos que mostrar.                     
+            "",#Dejo las primeras columnas de la untima fila vacias porque no hay datos que mostrar.                     
             "METADATA:",#Indico que la informacion pertenece a la metdata de la paginacion             
             f"pag={datos['metadata'].pag}/{datos['metadata'].total_pag}",  
             f"por_pag={datos['metadata'].por_pag}",                        
             f"total_registros={datos['total_registros']}"                   
         ]
 
-        # Convertir a CSV en memoria, lo guarda en la RAM y no crea un archivo, se utiliza para luego envirlo con fastapi y que se pueda descargar.
+        # Convertir a CSV en memoria, lo guarda en la RAM y no crea un archivo, se utiliza para luego enviarlo con fastapi y que se pueda descargar.
         csv_buffer = StringIO()
         df.to_csv(csv_buffer, index=False, sep=";", encoding="utf-8-sig")#Se convierte el DataFrame en archivo csv y se guarda en el buffer.
         csv_buffer.seek(0)#Vuelve a la linea 0 del buffer, para que se lea desde ahi.
@@ -833,11 +833,8 @@ def generar_csv_turnos_cancelados_reformado(db: Session):
 
 #=============== FUNCIONES PARA GENERAR ARCHIVOS PDF DE REPORTE ===================
 
-def generar_pdf_turnos_cancelados_mes_actual_reformado(db):
+def generar_pdf_turnos_cancelados_mes_actual_reformado(datos: dict):
     try:
-        # Reutiliza tu función que devuelve la estructura por persona
-        datos = get_turnos_cancelados_mes_actual_reformado(db)
-
         if not datos or not datos.get("detalle_por_persona"):
             return None
         # Crear documento
@@ -875,9 +872,9 @@ def generar_pdf_turnos_cancelados_mes_actual_reformado(db):
 
             #Creo una tabla con los turnos cancelados de cada persona. Una tabla por turnos correspondientes a cada persona.
             total_filas = 1 + len(turnos) #La cantidad de turnos cancelados de cada persona mas la fila de los encabezados.
-            encabezados = ["ID Turno", "Fecha", "Hora", "Estado"] #Los encaezados que quiero mostrar de los turnos de cada persona.
-            tamanio_columnas = [Decimal(50),Decimal(80), Decimal(40), Decimal(80)] #Indico el tamaño de las celdas para cada atributo.
-            table = FixedColumnWidthTable(number_of_rows=total_filas, number_of_columns=4, column_widths=tamanio_columnas)#Genero la tabla, indicando sus atributos.
+            encabezados = ["ID Turno", "Fecha", "Hora", "Estado", "Persona_id"] #Los encaezados que quiero mostrar de los turnos de cada persona.
+            tamanio_columnas = [Decimal(50),Decimal(80), Decimal(40), Decimal(80), Decimal(50)] #Indico el tamaño de las celdas para cada atributo.
+            table = FixedColumnWidthTable(number_of_rows=total_filas, number_of_columns=5, column_widths=tamanio_columnas)#Genero la tabla, indicando sus atributos.
 
             for encabezado in encabezados:
                 table.add(TableCell(Paragraph(encabezado, font="Helvetica-Bold", font_size=11, horizontal_alignment=Alignment.CENTERED), 
@@ -888,7 +885,7 @@ def generar_pdf_turnos_cancelados_mes_actual_reformado(db):
                 table.add(TableCell (Paragraph(t["fecha"], horizontal_alignment=Alignment.CENTERED), background_color= HexColor("#E6F0FF")))
                 table.add(TableCell (Paragraph(t["hora"], horizontal_alignment=Alignment.CENTERED), background_color= HexColor("#E6F0FF")))
                 table.add(TableCell (Paragraph(t["estado"], horizontal_alignment=Alignment.CENTERED), background_color= HexColor("#D9534F")))#Agrego los datos de cada turno cancelado, con un color de fondo en cada celda.
-
+                table.add(TableCell (Paragraph(str(persona["id"]), horizontal_alignment=Alignment.CENTERED), background_color= HexColor("#E6F0FF")))
             table.set_padding_on_all_cells(Decimal(3), Decimal(3), Decimal(2), Decimal(3)) #Agrego separacion entre el contenido y todos los bordes.
             layout.add(table) #Agrego la tabla a la pagina.
             layout.add(Paragraph(" ", margin_top=0, margin_bottom=0))
