@@ -905,7 +905,7 @@ def generar_csv_turnos_cancelados_reformado(db: Session):
         csv_buffer.seek(0)
         return csv_buffer
     except Exception as e:
-        raise Exception(f"Error inesperado al generar PDF de turnos cancelados: {e}")
+        raise Exception(f"Error inesperado al generar CSV de turnos cancelados: {e}")
 
     
 

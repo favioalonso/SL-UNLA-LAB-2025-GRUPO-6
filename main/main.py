@@ -660,3 +660,105 @@ def get_pdf_turnos_por_persona(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al generar el PDF: {str(e)}"
         )
+@app.get("/reportes/pdf/turnos-cancelados")
+def get_pdf_personas_min_5_cancelados(
+    #Parametro de entrada, por defecto esta en 5
+    min: int = Query(5, description="Número mínimo de turnos cancelados para incluir a una persona", ge=1), #ge: greater than or equal to, mayor o igual que 5
+    db:Session = Depends(get_db)
+):
+    """
+    Genera un reporte de una lista de personas con un min de turnos cancelados
+    """
+    try:
+        #Obtener datos para el reporte
+        datos_reporte = crudTurno.get_personas_turnos_cancelados(db, min_cancelados= min)
+        if not datos_reporte:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No se encontraron personas con {min} o mas turnos cancelados")
+        
+        #Generar el pdf
+        pdf_reporte = pdf_generator.generar_pdf_personas_con_min_cancelados(datos_reporte, min)
+
+        #Retornar el pdf
+        return Response(
+            content=pdf_reporte,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=personas_con_{min}_turnos_cancelados.pdf"}
+        )
+        
+    
+    except HTTPException:
+        raise
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error))
+    except Exception as error:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado al generar el PDF: {str(error)}")
+    
+@app.get("/reportes/pdf/turnos-confirmados")
+def get_pdf_turnos_confirmado_entre_fechas(
+    fecha_desde: str = Query(..., description="Fecha inicio YYYY-MM-DD"),
+    fecha_hasta: str = Query(..., description="Fecha fin YYYY-MM-DD"),
+    pag:int = Query(1, ge=1, description="Número de página"),
+    por_pag:int = Query(100, ge=1, le=100, description="Registros por página"),
+    db: Session = Depends(get_db)
+):
+    """
+        Se genera un pdf con el reporte de turnos confirmados entre dos fechas con formato YYY-MM-DD
+    """
+    try:
+        # Validar formato de fecha
+        try:
+            fecha_desde = datetime.strptime(fecha_desde, "%Y-%m-%d").date()
+            fecha_hasta = datetime.strptime(fecha_hasta, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Formato de fecha inválido. Use YYYY-MM-DD."
+            )
+        #Obtener datos del reporte
+        datos_reporte = crudTurno.get_turnos_confirmados_desde_hasta(fecha_desde, fecha_hasta, db, pag, por_pag)
+        if datos_reporte["total_registros"] == 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"No hay turnos confirmados desde {fecha_desde} hasta {fecha_hasta}")
+        
+        #Generar el pdf
+        pdf_reporte = pdf_generator.generar_pdf_turnos_confirmados_desde_hasta(datos_reporte, fecha_desde, fecha_hasta, pag, por_pag)
+
+        #Retornar el pdf
+        return Response(
+            content=pdf_reporte,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=turnos_confirmado_entre_fechas.pdf"}
+        )
+
+
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado al generar el PDF: {str(error)}")
+@app.get("/reportes/pdf/estado-personas")
+def get_pdf_personas_por_estado(
+    estado: bool = Query(...,description="Indica si listar personas habilitadas (true) o no habilitadas (false)"),
+    db: Session = Depends(get_db)
+):
+    """
+        Genera un PDF con el reporte de personas según el estado elegido
+    """
+    try:
+        #Obtener datos de reporte
+        datos_reporte = crud.get_personas_habilitadas_o_deshabilitadas(estado, db)
+        if not datos_reporte:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"No se encontraron personas con estado {estado}")
+        
+        #Generar PDF
+        pdf_reporte = pdf_generator.generar_pdf_personas_estado(datos_reporte, estado)
+
+        #Retornar PDF
+        return Response(
+            content=pdf_reporte,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=personas_con_estado_{estado}.pdf"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error inesperado al generar el PDF: {str(error)}")

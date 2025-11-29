@@ -2,11 +2,13 @@
 Módulo para generar reportes en formato PDF usando la librería borb 2.1.5.
 Contiene funciones para crear PDFs de los diferentes tipos de reportes del sistema.
 """
-
+from borb.pdf import TableCell
 from borb.pdf import Document, Page, SingleColumnLayout, Paragraph, PDF, FixedColumnWidthTable as Table
 from borb.pdf.canvas.color.color import HexColor
+from borb.pdf.canvas.layout.layout_element import Alignment
 from decimal import Decimal
 from io import BytesIO
+from datetime import date
 
 
 def generar_pdf_turnos_por_fecha(fecha: str, cantidad: int, turnos: list) -> bytes:
@@ -204,5 +206,165 @@ def generar_pdf_turnos_por_persona(persona_data: dict) -> bytes:
     PDF.dumps(buffer, doc)
     return buffer.getvalue()
 
+def generar_pdf_personas_con_min_cancelados(datos_persona: dict, min: int=5)-> bytes:
+    """
+    Genera un PDF con el reporte de turnos de una persona que tiene un min o mas turnos cancelados
 
+    Recibe:
+        datos_persona: Diccionario con lista de personas con su contador de turnos y sus turnos asignados
+    Retorna:
+        bytes: Contenido del PDF generado
+    """
  
+    documento = Document()
+    pagina = Page()
+    documento.add_page(pagina)
+    disenio = SingleColumnLayout(pagina)
+
+    #Titulo del PDF
+    disenio.add(Paragraph(
+        f"reporte de personas con un mínimo de {min} turnos cancelados".capitalize(),
+        font_size=Decimal(20),
+        font_color=HexColor("#27AE60")
+    ))
+    for personas_reportadas in datos_persona:
+
+
+        #Informacion de la persona
+        persona = personas_reportadas["persona"]
+        disenio.add(Paragraph(f"Nombre: {persona.nombre}", font_size=Decimal(16)))
+        disenio.add(Paragraph(f"DNI: {persona.dni}", font_size=Decimal(12)))
+        disenio.add(Paragraph(f"Edad: {persona.edad} años", font_size=Decimal(12)))
+        disenio.add(Paragraph(f"Total de turnos cancelados: {personas_reportadas["turnos_cancelados_contador"]}", font_size=Decimal(12), padding_bottom=Decimal(30), font_color=HexColor("#FF0000")))
+
+        #Tabla de turnos
+        turnos = personas_reportadas["turnos_cancelados_detalle"]
+        tabla = Table(number_of_rows=len(turnos)+1, number_of_columns=4)
+
+        #Encabezados
+        encabezados=["ID", "Fecha", "Hora", "Estado"]
+        for encabezado in encabezados:
+            celda_encabezado = TableCell(Paragraph(encabezado, font_color=HexColor("#FFFFFF")), background_color=HexColor("#71BE91"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+            tabla.add(celda_encabezado)
+        
+        #Datos del turno
+        for turno in turnos:
+            celda_id = TableCell(Paragraph(str(turno["id"])), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+            celda_fecha = TableCell(Paragraph(str(turno["fecha"])), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+            celda_hora = TableCell(Paragraph(str(turno["hora"])), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+            celda_estado = TableCell(Paragraph(str(turno["hora"])), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+            tabla.add(celda_id)
+            tabla.add(celda_fecha)
+            tabla.add(celda_hora)
+            tabla.add(celda_estado)
+
+        disenio.add(tabla)
+
+    #Generar bytes del PDF
+    buffer = BytesIO()
+    PDF.dumps(buffer, documento)
+    return buffer.getvalue()
+
+def generar_pdf_turnos_confirmados_desde_hasta(datos_reporte: dict, fecha_desde: date, fecha_hasta: date, pag: int, por_pag: int):
+    """
+    Genera un PDF con el reporte de turnos confirmados entre dos fechas
+
+    Recibe:
+        datos_reporte: Diccionario de lista de turnos, cantidad de registros y metadata de páginas
+    Retorna:
+        bytes: Contenido del PDF generado
+    """
+    documento = Document()
+    pagina = Page()
+    documento.add_page(pagina)
+    disenio = SingleColumnLayout(pagina)
+
+    #Titulo del PDF
+    disenio.add(Paragraph(
+        f"reporte de turnos confirmados entre {fecha_desde} y {fecha_hasta}".capitalize(),
+        font_size=Decimal(20),
+        font_color=HexColor("#0713B8")
+    ))
+    #Data de los registros encontrados
+    cant_turnos = datos_reporte["total_registros"]
+    disenio.add(Paragraph(f"Total de turnos confirmados: {cant_turnos}", font_size=Decimal(12), padding_bottom=Decimal(10), font_color=HexColor("#FF0000")))
+    disenio.add(Paragraph(f"Se muestran {por_pag} de registros de la página {pag}",font_size=Decimal(10), padding_bottom=Decimal(30), font_color=HexColor("#000000")))
+
+
+    #Tabla de turnos
+    turnos = datos_reporte["turnos"]
+    tabla = Table(number_of_rows=len(turnos)+1, number_of_columns=3)
+
+
+    #Encabezados
+    encabezados=["ID", "Fecha", "Hora"]
+    for encabezado in encabezados:
+            celda_encabezado = TableCell(Paragraph(encabezado, font_color=HexColor("#FFFFFF")), background_color=HexColor("#71BE91"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+            tabla.add(celda_encabezado)
+
+    for turno in turnos:
+        celda_id = TableCell(Paragraph(str(turno["id"])), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+        celda_fecha = TableCell(Paragraph(str(turno["fecha"])), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+        celda_hora = TableCell(Paragraph(str(turno["hora"])), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+        tabla.add(celda_id)
+        tabla.add(celda_fecha)
+        tabla.add(celda_hora)
+
+    disenio.add(tabla)
+
+    #Generar bytes del PDF
+    buffer = BytesIO()
+    PDF.dumps(buffer, documento)
+    return buffer.getvalue()
+
+def generar_pdf_personas_estado(datos_reporte: dict, estado: bool):
+    """
+    Genera un PDF con el reporte de personas con estado habilitado (true) o deshabilitado (false)
+
+    Recibe:
+        datos_reporte: Diccionario de personas
+    Retorna:
+        bytes: Contenido del PDF generado
+    """
+    documento = Document()
+    pagina = Page()
+    documento.add_page(pagina)
+    disenio = SingleColumnLayout(pagina)
+
+    #Titulo del PDF
+    disenio.add(Paragraph(
+        f"reporte de personas con estado {'habilitado' if estado else 'deshabilitado'}".capitalize(),
+        font_size=Decimal(20),
+        font_color=HexColor("#0713B8")
+    ))
+    cant_registros = len(datos_reporte)
+    disenio.add(Paragraph(
+        f"cantidad de personas con estado {'habilitado' if estado else 'deshabilitado'}: {cant_registros}".capitalize(), 
+        font_size=Decimal(14), 
+        font_color=HexColor("#27AE60") if estado else HexColor("#E01515")
+    ))
+    #Tabla de personas
+    tabla = Table(number_of_rows=cant_registros+1, number_of_columns=4)
+
+    #Encabezados
+    encabezados=["Nombre", "DNI", "Telefono", "Edad"]
+    for encabezado in encabezados:
+        celda_encabezado = TableCell(Paragraph(encabezado, font_color=HexColor("#FFFFFF")), background_color=HexColor("#71BE91"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+        tabla.add(celda_encabezado)
+    #Datos por persona
+    for persona in datos_reporte:
+        celda_nombre = TableCell(Paragraph(str(persona.nombre)), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+        celda_dni = TableCell(Paragraph(str(persona.dni)), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+        celda_telefono = TableCell(Paragraph(str(persona.telefono)), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+        celda_edad = TableCell(Paragraph(str(persona.edad)), background_color=HexColor("#D9F7F7"), padding_left=Decimal(10), padding_top=Decimal(5), padding_bottom=Decimal(5))
+        tabla.add(celda_nombre)
+        tabla.add(celda_dni)
+        tabla.add(celda_telefono)
+        tabla.add(celda_edad)
+
+    disenio.add(tabla)
+
+    #Generar bytes del PDF
+    buffer = BytesIO()
+    PDF.dumps(buffer, documento)
+    return buffer.getvalue()
