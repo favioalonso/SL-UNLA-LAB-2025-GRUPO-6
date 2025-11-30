@@ -761,6 +761,133 @@ def get_turnos_cancelados_por_mes(db: Session, mes: int = None, anio: int = None
 
 #=============== FUNCIONES PARA GENERAR ARCHIVOS CSV DE REPORTE ===================
 
+def generar_csv_turnos_por_fecha(db: Session, fecha: date):
+    datos = get_turnos_por_fecha(db, fecha) #Usamos la función para que traiga los turnos por fecha
+
+
+    if not datos:
+        return None #Retorna vacio si no hay datos
+   
+    filas_df = [] #creamos la lista para que pandas lo pueda leer (fila por turno) ya que los datos estan anidados
+
+    #recorre las personas y por cada recorre trae sus turnos
+    for item in datos:
+        persona = item["persona"]
+        turnos = item["turnos"]
+
+        #Creamos la fila combinando datos del turno y de la persona
+        for turno in turnos:
+            filas_df.append({
+                "Fecha": fecha.strftime("%d/%m/%Y"),
+                "Hora": turno["hora"],
+                "Estado": turno["estado"],
+                "Nombre Paciente": persona["nombre"],
+                "DNI": persona["dni"],
+                "ID Paciente": persona["id"],
+                "ID Turno": turno["id"],
+            })
+
+    #Crear DataFrame, conversion de la lista en una tabla por pandas
+    df = pd.DataFrame(filas_df)
+
+
+    #Simula un archivo de texto sin que cree un archivo temporal en el disco
+    buffer = StringIO()
+    #Index False es para que no guarde el numero de fila automático, encoding, detecte tildes y Ñ de forma correcta
+    df.to_csv(buffer, index=False, sep=";", encoding="utf-8-sig") #sep: ; es apra que separe en columnas
+    buffer.seek(0) # Rebobinar el buffer al inicio para poder leerlo desde el principio
+
+
+    return buffer
+
+
+def generar_csv_turnos_cancelados_mes(db: Session):
+    #Reutilizamos función
+    datos = get_turnos_cancelados_mes_actual_reformado(db)
+   
+    # Validamos si hay datos reales
+    if not datos:
+        return None
+
+
+    filas_df = []
+    detalle_personas = datos["detalle_por_persona"]#Lista detallada de las personas en la funcion
+
+
+   
+    for item in detalle_personas:
+        persona = item["persona"]
+        lista_turnos = item["turnos_cancelados"]
+       
+        for turno in lista_turnos:
+            filas_df.append({
+                "Mes Reporte": datos["mes"],
+                "Año": datos["anio"],
+                "Fecha Turno": turno["fecha"], # Ya viene como string YYYY-MM-DD
+                "Hora": turno["hora"],
+                "Nombre Paciente": persona["nombre"],
+                "DNI": persona["dni"],
+                "Teléfono": str(persona["telefono"]), # Asegurar string
+                "Total Cancelados Paciente": persona["cantidad_de_cancelados"] #utilizamos el contador de la funcion
+            })
+
+
+   
+    df = pd.DataFrame(filas_df)
+   
+    # Si no esta vacio, ordena por fecha por default de menor a mayor, inplace=true, ordena la tabla directo sin crear copia nueva
+    if not df.empty:
+        df.sort_values(by="Fecha Turno", inplace=True) 
+
+
+    # Exportar a buffer
+    buffer = StringIO()
+    df.to_csv(buffer, index=False, sep=";", encoding="utf-8-sig")
+    buffer.seek(0)
+   
+    return buffer #Retornamos
+
+
+def generar_csv_turnos_por_persona(db: Session, dni: str):
+    #Función turnos por dni
+    datos = get_turnos_por_dni(db, dni)
+   
+    if not datos or not datos["turnos"]:
+        return None
+
+
+    persona = datos["persona"] # Retorna la PersonaOut
+    turnos = datos["turnos"]   
+
+
+    filas_df = []
+
+   
+    for turno in turnos:
+        filas_df.append({
+            "DNI": persona.dni,
+            "Nombre": persona.nombre,
+            "Email": persona.email,
+            "Teléfono": persona.telefono,
+            "Fecha Turno": turno["fecha"].strftime("%d/%m/%Y"), #Conve4rtimos en string la fecha y hora
+            "Hora": turno["hora"].strftime("%H:%M"),
+            "Estado": turno["estado"],
+            "ID Turno": turno["id"]
+        })
+
+
+    # Crear DataFrame
+    df = pd.DataFrame(filas_df)
+
+
+    # Exportar
+    buffer = StringIO()
+    df.to_csv(buffer, index=False, sep=";", encoding="utf-8-sig")
+    buffer.seek(0)
+   
+    return buffer
+
+
 def generar_csv_turnos_cancelados(db: Session, min_cancelados: int):
     #Reutilizo la funcion para traer los resultados del deporte en formato JSON (diccionario o lista de diccionarios)
     lista_cancelados = get_personas_turnos_cancelados(db, min_cancelados)#retorna una lista de persona con sus turnos cancelados

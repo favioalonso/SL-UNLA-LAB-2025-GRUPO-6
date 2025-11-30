@@ -111,6 +111,7 @@ def create_sample_data():
             # Carlos Rodriguez (persona_id 3) - 2 turnos el 2025-11-24
             {"persona_id": 3, "fecha": "2025-11-24", "hora": "11:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
             {"persona_id": 3, "fecha": "2025-11-24", "hora": "16:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
+            
 
             # ===== JUAN PÉREZ (persona_id 1) - Múltiples turnos en diferentes fechas =====
             {"persona_id": 1, "fecha": "2025-09-25", "hora": "10:00:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
@@ -164,6 +165,13 @@ def create_sample_data():
             {"persona_id": 7, "fecha": "2025-10-18", "hora": "14:00:00", "estado": diccionario_estados.get('ESTADO_CONFIRMADO')},
             {"persona_id": 7, "fecha": "2025-11-25", "hora": "10:30:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
             {"persona_id": 7, "fecha": "2025-12-28", "hora": "16:00:00", "estado": diccionario_estados.get('ESTADO_PENDIENTE')},
+
+             # ===== CARLOS RODRIGUEZ (persona_id 3) - Múltiples turnos cancelados mes actual =====
+            {"persona_id": 3, "fecha": "2025-12-20", "hora": "16:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
+            {"persona_id": 3, "fecha": "2025-12-21", "hora": "10:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
+            {"persona_id": 3, "fecha": "2025-12-22", "hora": "11:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
+            {"persona_id": 3, "fecha": "2025-12-23", "hora": "12:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
+            {"persona_id": 3, "fecha": "2025-12-24", "hora": "09:00:00", "estado": diccionario_estados.get('ESTADO_CANCELADO')},
         ]
 
         # Crear los turnos de prueba

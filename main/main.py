@@ -403,6 +403,76 @@ def get_turnos_cancelados_mes_actual_reformado(db: Session = Depends(get_db)):
 
 # ============ ENDPOINTS DE REPORTES GENERANDO CSV ============
 
+@app.get("/reportes/csv/turnos-por-fecha")
+def descargar_csv_turnos_fecha(
+    fecha: str = Query(..., description="Formato YYYY-MM-DD"),
+    db: Session = Depends(get_db)
+):
+    try:
+        #Convertimos el string de la url en una fecha real
+        fecha_obj = datetime.strptime(fecha, "%Y-%m-%d").date()
+        csv_buffer = crudTurno.generar_csv_turnos_por_fecha(db, fecha_obj) #Generamos el archivo
+       
+        if not csv_buffer:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No hay turnos para esa fecha")
+
+
+        # StreamingResponse agarra el archivo en memoria para que pueda ser descargado
+        return StreamingResponse(
+            csv_buffer, #Que tiene que descargar
+            media_type="text/csv", #Tipo de archivo que es
+            headers={"Content-Disposition": f"attachment; filename=turnos_{fecha}.csv"} #Permitimos que se descargue el archivo y le indicamos el nombre
+        )
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Formato de fecha inválido")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+
+
+@app.get("/reportes/csv/cancelados-por-mes")
+def descargar_csv_cancelados_mes(db: Session = Depends(get_db)):
+    try:
+        csv_buffer = crudTurno.generar_csv_turnos_cancelados_mes(db) #Generamos el archivo
+       
+        if not csv_buffer:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No hay turnos cancelados este mes")
+
+
+        return StreamingResponse(
+            csv_buffer, #Que tiene que descargar
+            media_type="text/csv", #Tipo de archivo que es
+            #Permitimos que se descargue el archivo y le indicamos el nombre
+            headers={"Content-Disposition": "attachment; filename=cancelados_mes_actual.csv"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+
+
+@app.get("/reportes/csv/turnos-por-persona")
+def descargar_csv_turnos_persona(
+    dni: str = Query(..., min_length=8, max_length=8, regex=r"^\d{8}$"), #especificamos como tiene que ser el dni en longitud y que tiene que ser decimal
+    db: Session = Depends(get_db)
+):
+    try:
+        csv_buffer = crudTurno.generar_csv_turnos_por_persona(db, dni)
+       
+        if not csv_buffer:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se encontraron turnos para este DNI")
+
+
+        return StreamingResponse(
+            csv_buffer,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=historial_turnos_{dni}.csv"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 @app.get("/reportes/csv/turnos-cancelados")
 def generar_csv_turnos_cancelados(min: int = 5, db: Session = Depends(get_db)):
     try:
