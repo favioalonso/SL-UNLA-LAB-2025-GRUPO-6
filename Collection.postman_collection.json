@@ -959,6 +959,636 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Reportes en csv",
+			"item": [
+				{
+					"name": "Personas con 5+ turnos cancelados csv",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/reportes/csv/turnos-cancelados?min=5",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"reportes",
+								"csv",
+								"turnos-cancelados"
+							],
+							"query": [
+								{
+									"key": "min",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Turnos confirmados entre fechas csv",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/reportes/csv/turnos-confirmados?fecha_desde=2025-10-01&fecha_hasta=2025-12-31&pag=2&por_pag=5",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"reportes",
+								"csv",
+								"turnos-confirmados"
+							],
+							"query": [
+								{
+									"key": "fecha_desde",
+									"value": "2025-10-01"
+								},
+								{
+									"key": "fecha_hasta",
+									"value": "2025-12-31"
+								},
+								{
+									"key": "pag",
+									"value": "2"
+								},
+								{
+									"key": "por_pag",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Personas por estado (habilitado/deshabilitado) csv",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/reportes/csv/estado-personas?estado=true",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"reportes",
+								"csv",
+								"estado-personas"
+							],
+							"query": [
+								{
+									"key": "estado",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Turnos cancelados del mes actual por persona CSV",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8000/reportes/csv/turnos-cancelados-por-mes-reformado",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"reportes",
+								"csv",
+								"turnos-cancelados-por-mes-reformado"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Turnos por fecha",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/csv/turnos-por-fecha?fecha=2025-11-24",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"csv",
+								"turnos-por-fecha"
+							],
+							"query": [
+								{
+									"key": "fecha",
+									"value": "2025-11-24"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Turnos cancelados mes actual",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/csv/cancelados-por-mes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"csv",
+								"cancelados-por-mes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Turnos por persona(dni)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/csv/turnos-por-persona?dni=11223344",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"csv",
+								"turnos-por-persona"
+							],
+							"query": [
+								{
+									"key": "dni",
+									"value": "11223344"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reportes en pdf",
+			"item": [
+				{
+					"name": "Reporte de personas por estado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/pdf/estado-personas?estado=true/false",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"pdf",
+								"estado-personas"
+							],
+							"query": [
+								{
+									"key": "estado",
+									"value": "true/false"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Reporte de personas por estado",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/pdf/estado-personas?estado=true",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"pdf",
+										"estado-personas"
+									],
+									"query": [
+										{
+											"key": "estado",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						},
+						{
+							"name": "Reporte de personas por estado",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/pdf/estado-personas?estado=false",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"pdf",
+										"estado-personas"
+									],
+									"query": [
+										{
+											"key": "estado",
+											"value": "false"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						}
+					]
+				},
+				{
+					"name": "Reporte de turnos confirmados con min",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/pdf/turnos-confirmados?fecha_desde=YYYY-MM-DD&fecha_hasta=YYYY-MM-DD&pag=1&por_pag=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"pdf",
+								"turnos-confirmados"
+							],
+							"query": [
+								{
+									"key": "fecha_desde",
+									"value": "YYYY-MM-DD"
+								},
+								{
+									"key": "fecha_hasta",
+									"value": "YYYY-MM-DD"
+								},
+								{
+									"key": "pag",
+									"value": "1"
+								},
+								{
+									"key": "por_pag",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Reporte de turnos confirmados con min",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/pdf/turnos-confirmados?fecha_desde=2025-08-10&fecha_hasta=2025-11-30&pag=1&por_pag=5",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"pdf",
+										"turnos-confirmados"
+									],
+									"query": [
+										{
+											"key": "fecha_desde",
+											"value": "2025-08-10"
+										},
+										{
+											"key": "fecha_hasta",
+											"value": "2025-11-30"
+										},
+										{
+											"key": "pag",
+											"value": "1"
+										},
+										{
+											"key": "por_pag",
+											"value": "5"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						},
+						{
+							"name": "Reporte de turnos confirmados con min",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/pdf/turnos-confirmados?fecha_desde=2025-08-10&fecha_hasta=2025-11-30&pag=2&por_pag=10",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"pdf",
+										"turnos-confirmados"
+									],
+									"query": [
+										{
+											"key": "fecha_desde",
+											"value": "2025-08-10"
+										},
+										{
+											"key": "fecha_hasta",
+											"value": "2025-11-30"
+										},
+										{
+											"key": "pag",
+											"value": "2"
+										},
+										{
+											"key": "por_pag",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						}
+					]
+				},
+				{
+					"name": "Reporte de turnos cancelados entre fechas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/pdf/turnos-cancelados?min=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"pdf",
+								"turnos-cancelados"
+							],
+							"query": [
+								{
+									"key": "min",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Reporte de turnos cancelados entre fechas",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/pdf/turnos-cancelados?min=1",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"pdf",
+										"turnos-cancelados"
+									],
+									"query": [
+										{
+											"key": "min",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [
+								{
+									"expires": "Invalid Date",
+									"domain": "",
+									"path": ""
+								}
+							],
+							"body": ""
+						}
+					]
+				},
+				{
+					"name": "Reporte de turnos por fecha",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/pdf/turnos-por-fecha?fecha=YYYY-MM-DD",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"pdf",
+								"turnos-por-fecha"
+							],
+							"query": [
+								{
+									"key": "fecha",
+									"value": "YYYY-MM-DD"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Turnos del 2025-10-15",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/pdf/turnos-por-fecha?fecha=YYYY-MM-DD",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"pdf",
+										"turnos-por-fecha"
+									],
+									"query": [
+										{
+											"key": "fecha",
+											"value": "YYYY-MM-DD"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Reporte turnos cancelados por mes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/pdf/turnos-cancelados-por-mes?mes=MM&anio=YYYY",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"pdf",
+								"turnos-cancelados-por-mes"
+							],
+							"query": [
+								{
+									"key": "mes",
+									"value": "MM"
+								},
+								{
+									"key": "anio",
+									"value": "YYYY"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Reporte turnos cancelados por mes",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/reportes/pdf/turnos-cancelados-por-mes?mes=MM&anio=YYYY",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"reportes",
+										"pdf",
+										"turnos-cancelados-por-mes"
+									],
+									"query": [
+										{
+											"key": "mes",
+											"value": "MM"
+										},
+										{
+											"key": "anio",
+											"value": "YYYY"
+										}
+									]
+								}
+							},
+							"_postman_previewlanguage": "",
+							"header": [],
+							"cookie": [],
+							"body": ""
+						}
+					]
+				},
+				{
+					"name": "Reporte turnos por persona",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/pdf/turnos-por-persona?dni=12345678",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"pdf",
+								"turnos-por-persona"
+							],
+							"query": [
+								{
+									"key": "dni",
+									"value": "12345678"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [

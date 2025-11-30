@@ -100,6 +100,25 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
 | `GET` | `/reportes/turnos-confirmados?desde=YYYY-MM-DD&hasta=YYYY-MM-DD` | Reporte de turnos confirmados entre dos fechas | Martina Martinez |
 | `GET` | `/reportes/estado-personas?habilitada=true/false` | Reporte de personas segun estado | Martina Martinez |
 
+### 📈 Reportes en .csv
+| Método | Endpoint | Descripción | Desarrollado por |
+|--------|----------|-------------|------------------|
+| `GET` | `/reportes/csv/turnos-por-fecha?fecha=YYYY-MM-DD` | Reporte de turnos por fecha | Gonzalo Liberatori |
+| `GET` | `/reportes/csv/turnos-cancelados-por-mes` | Reporte de turnos cancelados por mes | Gonzalo Liberatori |
+| `GET` | `/reportes/csv/turnos-por-persona?dni=12345678`| Reporte de turnos por persona por dni | Gonzalo Liberatori |
+| `GET` | `/reportes/csv/turnos-cancelados?min=5` | Reporte de personas con min 5 turnos cancelados | Marcos Charadia |
+| `GET` | `/reportes/csv/turnos-confirmados?desde=YYYY-MM-DD&hasta=YYYY-MM-DD` | Reporte de turnos confirmados entre dos fechas | Marcos Charadia |
+| `GET` | `/reportes/csv/estado-personas?habilitada=true/false` | Reporte de personas segun estado | Marcos Charadia |
+
+### 📈 Reportes en .pdf
+| Método | Endpoint | Descripción | Desarrollado por |
+|--------|----------|-------------|------------------|
+| `GET` | `/reportes/pdf/turnos-por-fecha?fecha=YYYY-MM-DD` | Reporte de turnos por fecha | Favio Alonso |
+| `GET` | `/reportes/pdf/turnos-cancelados-por-mes` | Reporte de turnos cancelados por mes | Favio Alonso |
+| `GET` | `/reportes/pdf/turnos-por-persona?dni=12345678`| Reporte de turnos por persona por dni | Favio Alonso |
+| `GET` | `/reportes/pdf/turnos-cancelados?min=5` | Reporte de personas con min 5 turnos cancelados | Martina Martinez |
+| `GET` | `/reportes/pdf/turnos-confirmados?desde=YYYY-MM-DD&hasta=YYYY-MM-DD` | Reporte de turnos confirmados entre dos fechas | Martina Martinez |
+| `GET` | `/reportes/pdf/estado-personas?habilitada=true/false` | Reporte de personas segun estado | Martina Martinez |
 
 ## Funcionalidades del Sistema de Turnos
 
@@ -120,23 +139,27 @@ Este proyecto es una API REST desarrollada en Python con FastAPI y SQLAlchemy pa
 ```
 SL-UNLA-LAB-2025-GRUPO-6/
 ├── main/
-│   └── main.py              # Punto de entrada de la API con todos los endpoints
+│   └── main.py                           # Punto de entrada de la API con todos los endpoints
 ├── models/
-│   ├── models.py            # Modelos SQLAlchemy (Persona, Turno)
-│   └── modelsTurno.py       # Modelos específicos de turnos
+│   ├── models.py                         # Modelos SQLAlchemy (Persona, Turno)
+│   └── modelsTurno.py                    # Modelos específicos de turnos
 ├── schemas/
-│   ├── schemas.py           # Esquemas Pydantic para personas
-│   └── schemasTurno.py      # Esquemas Pydantic para turnos
+│   ├── schemas.py                        # Esquemas Pydantic para personas
+│   └── schemasTurno.py                   # Esquemas Pydantic para turnos
 ├── crud/
-│   ├── crud.py              # Funciones CRUD para personas
-│   └── crudTurno.py         # Funciones CRUD para turnos
+│   ├── crud.py                           # Funciones CRUD para personas
+│   └── crudTurno.py                      # Funciones CRUD para turnos
 ├── database/
-│   └── database.py          # Configuración de la base de datos
-├── .venv/                   # Entorno virtual
-├── requirements.txt         # Dependencias del proyecto
-├── README.md               # Documentación del proyecto
-├── abm_personas2.gif       # Demo del funcionamiento
-└── personas.db            # Base de datos SQLite (se crea automáticamente)
+│   └── database.py                       # Configuración de la base de datos
+│   └── seed_data.py                      # Datos de prueba
+├── services/
+│   └──pdf_service.py                     # Funciones para crear reportes en formato pdf
+├── .venv/                                # Entorno virtual
+├── requirements.txt                      # Dependencias del proyecto
+├── README.md                             # Documentación del proyecto
+├── .env                                  # Archivo de configuración de horarios y estados de turno
+├── personas.db                           # Base de datos SQLite (se crea automáticamente)
+└── Collection.postman_collection.json    #.json de collection de Postman
 ```
 
 ## Ejemplos de Uso
