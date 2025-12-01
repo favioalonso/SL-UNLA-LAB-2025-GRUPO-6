@@ -235,7 +235,7 @@ def generar_pdf_personas_con_min_cancelados(datos_persona: dict, min: int=5)-> b
         disenio.add(Paragraph(f"Nombre: {persona.nombre}", font_size=Decimal(16)))
         disenio.add(Paragraph(f"DNI: {persona.dni}", font_size=Decimal(12)))
         disenio.add(Paragraph(f"Edad: {persona.edad} años", font_size=Decimal(12)))
-        disenio.add(Paragraph(f"Total de turnos cancelados: {personas_reportadas["turnos_cancelados_contador"]}", font_size=Decimal(12), padding_bottom=Decimal(30), font_color=HexColor("#FF0000")))
+        disenio.add(Paragraph(f"Total de turnos cancelados: {personas_reportadas['turnos_cancelados_contador']}", font_size=Decimal(12), padding_bottom=Decimal(30), font_color=HexColor("#FF0000")))
 
         #Tabla de turnos
         turnos = personas_reportadas["turnos_cancelados_detalle"]
